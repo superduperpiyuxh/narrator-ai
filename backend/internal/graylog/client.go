@@ -32,10 +32,9 @@ type SearchResponse struct {
 	TotalResults int             `json:"total_results"`
 	Messages     []Message       `json:"messages"`
 	Fields       []string        `json:"fields"`
-	From         *int            `json:"from"`
-	To           *int            `json:"to"`
+	From         string          `json:"from"`
+	To           string          `json:"to"`
 	After        json.RawMessage `json:"after,omitempty"`
-	DecoratorID  string          `json:"decorator_id,omitempty"`
 }
 
 type Message struct {
