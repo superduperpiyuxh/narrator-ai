@@ -1,0 +1,422 @@
+
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.phase-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.pnav-btn{font-size:11px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;transition:all .15s;white-space:nowrap}
+.pnav-btn.active{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary)}
+.phase-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.phase-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;flex-shrink:0}
+.phase-meta{flex:1}
+.phase-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin:0 0 3px}
+.phase-days{font-size:12px;color:var(--color-text-tertiary);margin:0}
+.step-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 16px;margin-bottom:8px}
+.step-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
+.step-body{font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin:0}
+.code-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-primary);margin:8px 0 0;line-height:1.8;white-space:pre-wrap;word-break:break-all}
+.warn-bar{background:#FAEEDA;border-radius:var(--border-radius-md);padding:10px 14px;font-size:12px;color:#633806;margin-top:8px;display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+.gate-bar{background:#EAF3DE;border-radius:var(--border-radius-md);padding:10px 14px;font-size:12px;color:#3B6D11;margin-top:8px;display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+.nav-row{display:flex;justify-content:space-between;margin-top:20px}
+</style>
+
+<h2 class="sr-only">Step-by-step start guide for building NarratorAI</h2>
+
+<div style="padding:1rem 0 0">
+<div class="phase-nav" id="pnav"></div>
+<div id="phase-content"></div>
+<div class="nav-row">
+  <button onclick="go(-1)" style="font-size:13px;padding:6px 16px">← prev</button>
+  <button onclick="go(1)" style="font-size:13px;padding:6px 16px">next →</button>
+</div>
+</div>
+
+<script>
+const phases = [
+  {
+    title: 'Before you write a single line of code',
+    days: 'Day 1 — morning',
+    color: '#EAF3DE', textColor: '#3B6D11',
+    steps: [
+      {
+        label: '1. Create accounts (do this first, they take time to activate)',
+        body: 'Splunk Cloud free trial at splunk.com/en_us/download.html — you get 14 days free, 5GB/day. Also grab an Anthropic API key at console.anthropic.com. Both need email verification which can take 30–60 minutes.',
+        code: null,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '2. Set up your repo structure right now',
+        body: 'Create this structure immediately so you never wonder where to put things.',
+        code: `narratorai/
+├── backend/        ← Go + Gin
+├── frontend/       ← Next.js + Tailwind
+├── data/           ← MITRE STIX JSON goes here
+├── docker-compose.yml
+├── README.md
+└── architecture_diagram.png  ← required by hackathon rules`,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '3. Download the botsv3 dataset',
+        body: 'This is a real attack scenario dataset published by Splunk. Go to bots.splunk.com, register, and download it. This is what you demo with — do NOT use fake/made-up events. Judges will ask if this is real data.',
+        code: null,
+        warn: 'Do not skip this. Demoing with real attack data vs. made-up JSON is the difference between looking like you know what you\'re doing and looking like a toy project.',
+        gate: null
+      },
+      {
+        label: '4. Install your tools',
+        body: 'Everything you need before writing code.',
+        code: `# Go
+brew install go        # or https://go.dev/dl/
+
+# Node (for Next.js)
+brew install node
+
+# Init Go module
+cd backend && go mod init github.com/yourname/narratorai
+
+# Init Next.js
+cd ../frontend && npx create-next-app@latest . --typescript --tailwind --app`,
+        warn: null,
+        gate: null
+      }
+    ]
+  },
+  {
+    title: 'Get Splunk returning real events',
+    days: 'Day 1 afternoon → Day 2',
+    color: '#E6F1FB', textColor: '#0C447C',
+    steps: [
+      {
+        label: 'Why this is step 2 and not step 5',
+        body: 'Every part of this project depends on real Splunk events. If you skip ahead and build the Go aggregator with fake JSON, you will rewrite it when the real Splunk data has different field names. Start here, stay here until it works.',
+        code: null,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '1. Ingest botsv3 into your Splunk trial',
+        body: 'In your Splunk Cloud UI: Settings → Add Data → Upload → select the botsv3 .tar.gz. Set the index to "botsv3". Wait for indexing to finish (can take 20–40 min for the full dataset).',
+        code: null,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '2. Write and verify these two SPL queries in Splunk UI first',
+        body: 'Run these in the Splunk search bar before writing any Go code. See what the actual JSON fields look like.',
+        code: `-- Failed logins grouped by user + source IP
+index=botsv3 sourcetype=WinEventLog EventCode=4625
+| stats count by src_ip, user, _time
+| sort -count
+
+-- Lateral movement / remote service events
+index=botsv3 sourcetype=WinEventLog EventCode=4624
+| stats count by src_ip, dest, user, _time
+| sort -_time`,
+        warn: null,
+        gate: 'Gate: do not move to Go until you see real results in the Splunk UI. The field names you see here are the exact struct fields you\'ll use in Go.'
+      },
+      {
+        label: '3. Enable Splunk REST API access',
+        body: 'In Splunk Cloud: Settings → Server Settings → General Settings → Enable token auth. Create a token: Settings → Tokens → New Token. Copy it — this goes in your .env file.',
+        code: `# backend/.env  (never commit this)
+SPLUNK_HOST=your-instance.splunkcloud.com
+SPLUNK_PORT=8089
+SPLUNK_TOKEN=your-token-here
+ANTHROPIC_API_KEY=your-key-here`,
+        warn: null,
+        gate: null
+      }
+    ]
+  },
+  {
+    title: 'Go Splunk client — prove the connection',
+    days: 'Day 2 afternoon → Day 3',
+    color: '#EEEDFE', textColor: '#3C3489',
+    steps: [
+      {
+        label: 'The only goal of this phase',
+        body: 'Write Go code that calls Splunk\'s REST API, runs a SPL query, and prints raw JSON to your terminal. Nothing more. No aggregation, no LLM, no structs. Just prove the pipe works.',
+        code: null,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '1. Write the Splunk client (ask AI for the boilerplate)',
+        body: 'Give AI this exact prompt. Do not let it build the whole app — just this one file.',
+        code: `Prompt to AI:
+"Write a Go function that calls the Splunk REST API
+search endpoint using HTTP POST with token auth.
+The function takes a SPL query string, a Splunk host,
+port, and bearer token. Return the raw response body
+as []byte. Use net/http, no third-party SDKs.
+Splunk endpoint: POST /services/search/jobs
+then GET /services/search/jobs/{sid}/results?output_mode=json"`,
+        warn: 'AI will sometimes use the wrong Splunk endpoint or an outdated auth method. Verify against: docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTsearch',
+        gate: null
+      },
+      {
+        label: '2. Define your event struct based on what you actually saw',
+        body: 'Look at the real Splunk JSON you got in Phase 2. Map the actual field names.',
+        code: `type SplunkEvent struct {
+    Time   string \`json:"_time"\`
+    SrcIP  string \`json:"src_ip"\`
+    DestIP string \`json:"dest"\`
+    User   string \`json:"user"\`
+    Action string \`json:"action"\`
+    Raw    string \`json:"_raw"\`  // keep original — needed for source tracing
+    EventID string \`json:"EventCode"\`
+}`,
+        warn: null,
+        gate: 'Gate: run go run main.go and see real botsv3 events printed in your terminal. This is your "hello world" checkpoint. If this is not working, nothing else will.'
+      }
+    ]
+  },
+  {
+    title: 'Event aggregator + MITRE mapper',
+    days: 'Day 3 → Day 4',
+    color: '#E1F5EE', textColor: '#0F6E56',
+    steps: [
+      {
+        label: '1. Build the event aggregator',
+        body: 'Group raw events into "incidents" — a cluster of events tied to the same attack within a time window. Give AI your SplunkEvent struct and ask for this specific thing.',
+        code: `Prompt to AI:
+"Given this Go struct [paste SplunkEvent], write a function
+GroupIntoIncidents(events []SplunkEvent) []Incident
+that groups events sharing the same src_ip within a
+15-minute time window. An Incident should have:
+- ID string (uuid)
+- Events []SplunkEvent  (preserve all originals)
+- StartTime, EndTime time.Time
+- UniqueUsers []string
+- UniqueIPs []string"
+
+// The Incident.Events field is critical —
+// it's what powers source tracing later`,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '2. Download and parse MITRE ATT&CK STIX JSON',
+        body: 'Get the free STIX dataset — no auth needed.',
+        code: `curl -L https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json \
+  -o data/mitre-attack.json
+
+# Then in Go: write a simple lookup
+# Given an EventCode (e.g. 4625 = failed login)
+# → return MITRE TTP (T1110 = Brute Force)
+# Start with a hardcoded map of 10 common EventCodes.
+# Don't try to parse the full STIX graph — that's weeks of work.`,
+        warn: 'A hardcoded map of 10–15 EventCode → TTP mappings is completely fine for a hackathon. Don\'t try to write a full STIX parser. Judges care that TTPs appear in the output, not how you looked them up.',
+        gate: 'Gate: given a []SplunkEvent, your code returns an Incident with MITRE TTPs attached. Print it as JSON to verify.'
+      }
+    ]
+  },
+  {
+    title: 'LLM narrative engine — the hardest part',
+    days: 'Day 5 → Day 8',
+    color: '#FAECE7', textColor: '#993C1D',
+    steps: [
+      {
+        label: 'Honest warning about this phase',
+        body: 'This is where people lose days. The LLM will produce beautiful-looking but wrong narratives on the first 10 attempts. Budget 4 days and do not rush it.',
+        code: null,
+        warn: 'Do NOT just pass event data and say "write a narrative." You will get hallucinations. You need a structured prompt that constrains the model to only narrate facts in the JSON.',
+        gate: null
+      },
+      {
+        label: '1. The prompt structure that prevents hallucination',
+        body: 'This is your starting prompt. Paste your Incident JSON into it and iterate.',
+        code: `System:
+You are a security analyst writing incident narratives.
+You MUST only state facts present in the <events> XML below.
+Never invent IP addresses, usernames, threat actors, or timestamps
+not present in the data. If the data is insufficient to make a
+claim, say so explicitly. Every factual claim must reference
+the event_id it comes from using [event:ID] notation.
+
+User:
+Analyze this security incident and write a 3-sentence narrative.
+
+<incident_id>{{.ID}}</incident_id>
+<time_range>{{.StartTime}} to {{.EndTime}}</time_range>
+<mitre_ttps>{{.TTPs}}</mitre_ttps>
+<events>
+{{range .Events}}
+<event id="{{.EventID}}" time="{{.Time}}" src="{{.SrcIP}}"
+  user="{{.User}}" dest="{{.DestIP}}" raw="{{SANITIZED_RAW}}"/>
+{{end}}
+</events>
+
+Return JSON only:
+{"narrative": "...", "confidence": 0.0-1.0, "event_refs": ["id1","id2"]}`,
+        warn: null,
+        gate: null
+      },
+      {
+        label: '2. Prompt injection sanitization — do this now, not later',
+        body: 'Before any event field enters your prompt, sanitize it. This is the fix that impresses security judges.',
+        code: `func sanitizeField(s string) string {
+    // Strip anything that looks like an instruction
+    blocked := []string{
+        "ignore previous", "disregard", "system:",
+        "you are", "forget", "</events>", "<system>",
+    }
+    lower := strings.ToLower(s)
+    for _, b := range blocked {
+        if strings.Contains(lower, b) {
+            return "[REDACTED-SUSPICIOUS-FIELD]"
+        }
+    }
+    // Truncate long fields — usernames shouldn't be 500 chars
+    if len(s) > 100 {
+        return s[:100] + "..."
+    }
+    return s
+}`,
+        warn: null,
+        gate: 'Gate: your Go service calls the Anthropic API, passes a real botsv3 incident, and returns a JSON narrative where every claim has an event_ref ID. Print the raw API response and check it manually for invented facts.'
+      }
+    ]
+  },
+  {
+    title: 'Gin API — wire it all together',
+    days: 'Day 8 → Day 9',
+    color: '#EEEDFE', textColor: '#3C3489',
+    steps: [
+      {
+        label: 'Keep this dead simple — two endpoints only',
+        body: 'You do not need a complex API. Two endpoints is all the frontend needs.',
+        code: `// GET /incidents
+// Returns list of aggregated incidents (no narrative yet)
+// Used to populate the dashboard list
+
+// POST /incidents/:id/analyze
+// Triggers: pull events → aggregate → MITRE map → LLM narrative
+// Returns: { incident, narrative, confidence, event_refs }
+
+// That's it. Do not add more endpoints until these work end-to-end.`,
+        warn: null,
+        gate: null
+      },
+      {
+        label: 'Wire the pipeline in one handler',
+        body: 'Ask AI to write the Gin handler. Give it your existing functions — do not let it rewrite them.',
+        code: `Prompt to AI:
+"Write a Gin handler for POST /incidents/:id/analyze.
+It should call these existing functions I already have:
+- FetchEvents(id string) ([]SplunkEvent, error)
+- GroupIntoIncidents([]SplunkEvent) []Incident
+- MapMITRE(incident Incident) Incident
+- GenerateNarrative(incident Incident) (NarrativeResult, error)
+Chain them and return JSON. Add basic error handling."`,
+        warn: null,
+        gate: 'Gate: call POST /incidents/test/analyze with curl and get a real narrative JSON back. This is your fully working backend. Commit and push before touching the frontend.'
+      }
+    ]
+  },
+  {
+    title: 'Next.js frontend — story cards',
+    days: 'Day 9 → Day 13',
+    color: '#E6F1FB', textColor: '#0C447C',
+    steps: [
+      {
+        label: 'Build in this exact order — do not skip ahead',
+        body: '1. Fetch incidents list and display as plain text. 2. Style into cards. 3. Add the "analyze" button that calls your Go API. 4. Display the narrative. 5. Add source tracing. 6. Add analyst annotation. In that order. Each step must work before building the next.',
+        code: null,
+        warn: null,
+        gate: null
+      },
+      {
+        label: 'The source tracing component — this is what impresses judges',
+        body: 'Every sentence in the narrative has event_refs from the API. Highlight sentences on hover and show the raw event that supports that claim. This directly answers the judge\'s "how do we trust this?" question.',
+        code: `// NarrativeSentence.tsx
+// Props: sentence string, eventRefs string[], events SplunkEvent[]
+// On hover: highlight sentence + show matching raw events in a panel
+// This is ~60 lines of React. Ask AI to write it given these props.
+
+// Key UI detail: use a yellow underline on hover, not a popup.
+// Popups get clipped. A side panel that opens is cleaner.`,
+        warn: null,
+        gate: null
+      },
+      {
+        label: 'Analyst annotation — the differentiator from Splunk\'s own AI',
+        body: 'Add a thumbs up/down on each narrative + a text field for analyst notes. Store in localStorage for the demo. This is what Splunk\'s built-in tools don\'t have — and you mention it explicitly in your video.',
+        code: null,
+        warn: null,
+        gate: 'Gate: full end-to-end flow works in browser. Open an incident → click Analyze → see narrative with highlighted sentences → hover a sentence → see the raw event. Record a screen capture of this moment — this is your demo centrepiece.'
+      }
+    ]
+  },
+  {
+    title: 'Submit — the part most people underdo',
+    days: 'Day 14 → Day 15',
+    color: '#EAF3DE', textColor: '#3B6D11',
+    steps: [
+      {
+        label: 'Demo video — write a script first',
+        body: 'Your script should be: 30 sec problem (alert fatigue, show a table of 500 raw alerts). 90 sec demo (open NarratorAI, analyze an incident, hover a sentence, show the raw event proof, show the confidence score). 30 sec "how it\'s different" (show the sanitization, mention the source tracing, say Splunk\'s built-in tools don\'t link claims to evidence). 30 sec wrap. That\'s 3 minutes exactly.',
+        code: null,
+        warn: 'Record in one continuous take if you can. Jump cuts look unprofessional. If you mess up, restart from the last natural pause point. Do not use background music — it triggers copyright flags on YouTube.',
+        gate: null
+      },
+      {
+        label: 'Required files checklist before submitting',
+        body: 'The hackathon rules are explicit. Missing any of these = automatic disqualification.',
+        code: `✓ architecture_diagram.png at repo root
+✓ README.md with setup + run instructions
+✓ docker-compose.yml that spins up backend + frontend
+✓ .env.example with all required keys (no real values)
+✓ Open source license file (MIT is fine)
+✓ YouTube/Vimeo video link (must be public, under 3 min)
+✓ Public repo (go to Settings → make public)`,
+        warn: null,
+        gate: 'Final gate: clone your own repo into a fresh directory and follow your own README from scratch. If you get stuck, a judge will too. Fix it before submitting.'
+      }
+    ]
+  }
+];
+
+let cur = 0;
+
+function go(dir) {
+  cur = Math.max(0, Math.min(phases.length - 1, cur + dir));
+  render();
+}
+
+function setPhase(i) {
+  cur = i;
+  render();
+}
+
+function render() {
+  const navHtml = phases.map((p, i) =>
+    `<button class="pnav-btn ${i === cur ? 'active' : ''}" onclick="setPhase(${i})">Phase ${i+1}</button>`
+  ).join('');
+  document.getElementById('pnav').innerHTML = navHtml;
+
+  const p = phases[cur];
+  let html = `<div class="phase-header">
+    <div class="phase-num" style="background:${p.color};color:${p.textColor}">${cur+1}</div>
+    <div class="phase-meta">
+      <p class="phase-title">${p.title}</p>
+      <p class="phase-days">${p.days}</p>
+    </div>
+  </div>`;
+
+  p.steps.forEach(s => {
+    html += `<div class="step-card">
+      <p class="step-label" style="color:${p.textColor}">${s.label}</p>
+      <p class="step-body">${s.body}</p>`;
+    if (s.code) html += `<div class="code-block">${s.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+    if (s.warn) html += `<div class="warn-bar"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i><span>${s.warn}</span></div>`;
+    if (s.gate) html += `<div class="gate-bar"><i class="ti ti-flag" style="font-size:15px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i><span><strong>Gate:</strong> ${s.gate}</span></div>`;
+    html += `</div>`;
+  });
+
+  document.getElementById('phase-content').innerHTML = html;
+}
+
+render();
+</script>

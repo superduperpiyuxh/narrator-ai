@@ -1,0 +1,175 @@
+
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.mode-btn{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);transition:all .15s}
+.mode-btn.active{background:var(--color-background-primary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.phase-row{display:grid;grid-template-columns:180px 1fr 52px;align-items:center;gap:12px;margin-bottom:8px}
+.phase-name{font-size:12px;color:var(--color-text-secondary);line-height:1.4}
+.bar-bg{height:8px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.bar-days{font-size:12px;color:var(--color-text-tertiary);text-align:right}
+.total-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.total-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.total-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:12px}
+.hard-tag{background:#FCEBEB;color:#A32D2D}
+.mid-tag{background:#FAEEDA;color:#633806}
+.easy-tag{background:#EAF3DE;color:#3B6D11}
+.risk-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:8px;display:flex;gap:10px;align-items:flex-start}
+.risk-icon{font-size:14px;margin-top:1px}
+.risk-body{font-size:12px;color:var(--color-text-secondary);line-height:1.5;margin:0}
+.risk-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin:0 0 2px}
+</style>
+
+<h2 class="sr-only">Build timeline estimator for NarratorAI hackathon project</h2>
+
+<div style="padding:1rem 0 0">
+
+<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+  <button class="mode-btn active" onclick="setMode('solo')">Solo, full-time</button>
+  <button class="mode-btn" onclick="setMode('team')">Team of 2</button>
+  <button class="mode-btn" onclick="setMode('part')">Solo, evenings only</button>
+</div>
+
+<div id="phases"></div>
+
+<div class="total-box">
+  <div>
+    <p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 4px">Total to hackathon-ready</p>
+    <p class="total-val" id="total-days">—</p>
+  </div>
+  <div style="text-align:right">
+    <p style="font-size:12px;color:var(--color-text-tertiary);margin:0 0 4px">Calendar time</p>
+    <p style="font-size:14px;font-weight:500;color:var(--color-text-primary)" id="total-weeks">—</p>
+  </div>
+</div>
+
+<p style="font-size:12px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-tertiary);margin:20px 0 8px">Where time actually goes — the hard truths</p>
+
+<div class="risk-card">
+  <i class="ti ti-flame risk-icon" style="color:#D85A30" aria-hidden="true"></i>
+  <div>
+    <p class="risk-title">Prompt engineering eats 3x more time than you budget</p>
+    <p class="risk-body">Getting the LLM to produce clean, source-traceable narratives without hallucination is not one afternoon. You'll iterate 30–50 prompt versions. Budget 4+ days just for this.</p>
+  </div>
+</div>
+
+<div class="risk-card">
+  <i class="ti ti-flame risk-icon" style="color:#D85A30" aria-hidden="true"></i>
+  <div>
+    <p class="risk-title">Splunk setup will take longer than expected if you're new to it</p>
+    <p class="risk-body">Getting a trial instance, ingesting sample security data, and writing SPL queries you've never written before is a 3–5 day learning curve. Don't skip the Splunk docs.</p>
+  </div>
+</div>
+
+<div class="risk-card">
+  <i class="ti ti-camera risk-icon" style="color:#BA7517" aria-hidden="true"></i>
+  <div>
+    <p class="risk-title">The demo video is a full day's work, minimum</p>
+    <p class="risk-body">Scripting, recording, editing, narrating, uploading. Most hackers spend 2 hours and it shows. A polished video is literally a judging input — treat it like a deliverable, not an afterthought.</p>
+  </div>
+</div>
+
+<div class="risk-card">
+  <i class="ti ti-shield risk-icon" style="color:#3B6D11" aria-hidden="true"></i>
+  <div>
+    <p class="risk-title">The prompt injection fix is actually fast — don't skip it</p>
+    <p class="risk-body">Sanitizing user-controlled fields before they enter the LLM prompt takes about half a day. It's the single highest-ROI task for your judge score given the security context of this project.</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+const modes = {
+  solo: {
+    label: 'full-time (8 hrs/day)',
+    phases: [
+      { name: 'Splunk setup + sample data ingestion', days: 3, color: '#378ADD', diff: 'hard-tag', diffLabel: 'hardest if new to Splunk' },
+      { name: 'SPL queries + Python event aggregator', days: 3, color: '#378ADD', diff: 'mid-tag', diffLabel: 'moderate' },
+      { name: 'MITRE ATT&CK STIX mapper', days: 1, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'straightforward' },
+      { name: 'LLM prompt engineering + hallucination guard', days: 4, color: '#D85A30', diff: 'hard-tag', diffLabel: 'hardest overall' },
+      { name: 'Prompt injection sanitization', days: 1, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'do this early' },
+      { name: 'Source tracing (sentence → raw event link)', days: 2, color: '#378ADD', diff: 'mid-tag', diffLabel: 'moderate' },
+      { name: 'FastAPI backend + pipeline orchestration', days: 2, color: '#378ADD', diff: 'easy-tag', diffLabel: 'routine' },
+      { name: 'React frontend — story cards + annotation UI', days: 4, color: '#D85A30', diff: 'mid-tag', diffLabel: 'most visible to judges' },
+      { name: 'End-to-end testing + bug fixes', days: 2, color: '#BA7517', diff: 'mid-tag', diffLabel: 'never skip' },
+      { name: 'Architecture diagram + README', days: 1, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'required for submission' },
+      { name: 'Demo video (script, record, edit)', days: 2, color: '#BA7517', diff: 'mid-tag', diffLabel: 'judges watch this first' },
+    ]
+  },
+  team: {
+    label: 'team of 2 (backend + frontend split)',
+    phases: [
+      { name: 'Splunk setup + sample data ingestion', days: 2, color: '#378ADD', diff: 'hard-tag', diffLabel: 'hardest if new to Splunk' },
+      { name: 'SPL queries + Python event aggregator', days: 2, color: '#378ADD', diff: 'mid-tag', diffLabel: 'parallel with frontend setup' },
+      { name: 'MITRE ATT&CK STIX mapper', days: 1, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'straightforward' },
+      { name: 'LLM prompt engineering + hallucination guard', days: 3, color: '#D85A30', diff: 'hard-tag', diffLabel: 'hardest overall' },
+      { name: 'Prompt injection sanitization', days: 0.5, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'half a day' },
+      { name: 'Source tracing (sentence → raw event link)', days: 1, color: '#378ADD', diff: 'mid-tag', diffLabel: 'parallel with frontend' },
+      { name: 'FastAPI backend + pipeline orchestration', days: 1, color: '#378ADD', diff: 'easy-tag', diffLabel: 'routine' },
+      { name: 'React frontend — story cards + annotation UI', days: 3, color: '#D85A30', diff: 'mid-tag', diffLabel: 'most visible to judges' },
+      { name: 'Integration + testing', days: 2, color: '#BA7517', diff: 'mid-tag', diffLabel: 'never skip' },
+      { name: 'Architecture diagram + README', days: 0.5, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'required' },
+      { name: 'Demo video', days: 1, color: '#BA7517', diff: 'mid-tag', diffLabel: 'judges watch this first' },
+    ]
+  },
+  part: {
+    label: 'solo evenings (3–4 hrs/day)',
+    phases: [
+      { name: 'Splunk setup + sample data ingestion', days: 6, color: '#378ADD', diff: 'hard-tag', diffLabel: 'spread over first week' },
+      { name: 'SPL queries + Python event aggregator', days: 6, color: '#378ADD', diff: 'mid-tag', diffLabel: 'moderate' },
+      { name: 'MITRE ATT&CK STIX mapper', days: 2, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'straightforward' },
+      { name: 'LLM prompt engineering + hallucination guard', days: 8, color: '#D85A30', diff: 'hard-tag', diffLabel: 'hardest, highly iterative' },
+      { name: 'Prompt injection sanitization', days: 1, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'one session' },
+      { name: 'Source tracing (sentence → raw event link)', days: 4, color: '#378ADD', diff: 'mid-tag', diffLabel: 'moderate' },
+      { name: 'FastAPI backend + pipeline orchestration', days: 3, color: '#378ADD', diff: 'easy-tag', diffLabel: 'routine' },
+      { name: 'React frontend — story cards + annotation UI', days: 8, color: '#D85A30', diff: 'mid-tag', diffLabel: 'most visible to judges' },
+      { name: 'Testing + bug fixes', days: 4, color: '#BA7517', diff: 'mid-tag', diffLabel: 'always takes longer' },
+      { name: 'Architecture diagram + README', days: 2, color: '#1D9E75', diff: 'easy-tag', diffLabel: 'required' },
+      { name: 'Demo video', days: 3, color: '#BA7517', diff: 'mid-tag', diffLabel: 'judges watch this first' },
+    ]
+  }
+};
+
+let current = 'solo';
+
+function setMode(m) {
+  current = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  render();
+}
+
+function render() {
+  const data = modes[current];
+  const total = data.phases.reduce((s, p) => s + p.days, 0);
+  const max = Math.max(...data.phases.map(p => p.days));
+  const isPartTime = current === 'part';
+  const hoursPerDay = current === 'part' ? 3.5 : 8;
+  const totalHours = total * hoursPerDay;
+  const calendarDays = current === 'team' ? Math.round(total * 0.6) : current === 'part' ? total : total;
+  const weeks = current === 'part' ? Math.round(calendarDays / 7 * 10) / 10 : Math.round(calendarDays / 5 * 10) / 10;
+  const unit = current === 'part' ? 'calendar days' : 'working days';
+
+  let html = '';
+  data.phases.forEach(p => {
+    const pct = Math.round((p.days / max) * 100);
+    const displayDays = p.days === 0.5 ? '½ day' : p.days + (p.days === 1 ? ' day' : ' days');
+    html += `<div class="phase-row">
+      <div>
+        <p class="phase-name" style="margin:0 0 2px">${p.name}</p>
+        <span class="tag ${p.diff}">${p.diffLabel}</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${p.color}"></div></div>
+      <span class="bar-days">${displayDays}</span>
+    </div>`;
+  });
+
+  document.getElementById('phases').innerHTML = html;
+  document.getElementById('total-days').textContent = total + ' ' + unit;
+  document.getElementById('total-weeks').textContent = weeks + ' weeks' + (current === 'part' ? ' (~' + Math.round(totalHours) + ' hrs total)' : '');
+}
+
+render();
+</script>
