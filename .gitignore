@@ -7,8 +7,10 @@ data/
 *.json.gz
 
 # Go
+backend/narrator-ai
 backend/narratorai
 backend/*.db
+*.exe
 
 # Node
 frontend/node_modules/
