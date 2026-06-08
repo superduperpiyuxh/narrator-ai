@@ -94,7 +94,7 @@ def convert_to_gelf(event):
 
     return gelf
 
-def import_file(filepath, batch_size=500):
+def import_file(filepath, batch_size=50):
     """Import a JSON file into Graylog via GELF HTTP."""
     total = 0
     errors = 0
