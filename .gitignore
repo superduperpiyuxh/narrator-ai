@@ -1,0 +1,24 @@
+# Environment
+.env
+
+# Data files (too large for git)
+data/
+*.jsonl
+*.json.gz
+
+# Go
+backend/narratorai
+backend/*.db
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+mongo_data/
+opensearch_data/
