@@ -1,7 +1,7 @@
 # Environment
 .env
 
-# Data files (too large for git)
+# Data files
 data/
 *.jsonl
 *.json.gz
@@ -10,10 +10,12 @@ data/
 backend/narrator-ai
 backend/narratorai
 backend/*.db
+backend/*.db-shm
+backend/*.db-wal
 *.exe
 
 # Node
-frontend/node_modules/
+node_modules/
 frontend/.next/
 frontend/out/
 
