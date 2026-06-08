@@ -23,18 +23,18 @@ func NewClient(baseURL, username, password string) *Client {
 		Username: username,
 		Password: password,
 		HTTPClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 }
 
 type SearchResponse struct {
-	TotalResults int             `json:"total_results"`
-	Messages     []Message       `json:"messages"`
-	Fields       []string        `json:"fields"`
-	From         string          `json:"from"`
-	To           string          `json:"to"`
-	After        json.RawMessage `json:"after,omitempty"`
+	TotalResults int       `json:"total_results"`
+	Messages     []Message `json:"messages"`
+	Fields       []string  `json:"fields"`
+	From         string    `json:"from"`
+	To           string    `json:"to"`
+	After        string    `json:"after,omitempty"`
 }
 
 type Message struct {
@@ -44,30 +44,20 @@ type Message struct {
 	Relevance float64                `json:"relevance"`
 }
 
-func (c *Client) doRequest(method, path string, params url.Values) (*http.Request, error) {
-	u := fmt.Sprintf("%s%s", c.BaseURL, path)
-	if params != nil {
-		u += "?" + params.Encode()
-	}
-	req, err := http.NewRequest(method, u, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(c.Username, c.Password)
-	req.Header.Set("Accept", "application/json")
-	return req, nil
-}
-
-func (c *Client) FetchEvents(query string, limit int, after json.RawMessage) (*SearchResponse, error) {
+func (c *Client) FetchEvents(query string, limit int, from, to string) (*SearchResponse, error) {
 	params := url.Values{}
 	params.Set("query", query)
 	params.Set("limit", strconv.Itoa(limit))
-	params.Set("range", "0")
+	params.Set("from", from)
+	params.Set("to", to)
 
-	req, err := c.doRequest("GET", "/api/search/universal/relative", params)
+	u := fmt.Sprintf("%s/api/search/universal/absolute?%s", c.BaseURL, params.Encode())
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
+	req.SetBasicAuth(c.Username, c.Password)
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -89,11 +79,13 @@ func (c *Client) FetchEvents(query string, limit int, after json.RawMessage) (*S
 }
 
 func (c *Client) FetchAllEvents(query string, batchSize int, callback func([]Event) error) error {
-	var after json.RawMessage
+	// Use absolute time range for Dec 21-22 2025 data
+	from := "2025-12-21T00:00:00.000Z"
+	to := "2025-12-23T00:00:00.000Z"
 	total := 0
 
 	for {
-		resp, err := c.FetchEvents(query, batchSize, after)
+		resp, err := c.FetchEvents(query, batchSize, from, to)
 		if err != nil {
 			return fmt.Errorf("fetch batch at offset %d: %w", total, err)
 		}
@@ -114,7 +106,13 @@ func (c *Client) FetchAllEvents(query string, batchSize int, callback func([]Eve
 			break
 		}
 
-		after = resp.After
+		// Use last event timestamp as next 'from'
+		if len(resp.Messages) > 0 {
+			lastTS := resp.Messages[len(resp.Messages)-1].Message["timestamp"]
+			if ts, ok := lastTS.(string); ok && ts != "" {
+				from = ts
+			}
+		}
 	}
 
 	return nil
@@ -125,67 +123,68 @@ func MessageToEvent(msg Message) Event {
 		RawJSON: msg.Message,
 	}
 
+	// Graylog strips _ prefix from GELF custom fields
 	if ts, ok := msg.Message["timestamp"].(string); ok {
 		e.Timestamp = ts
 	}
 	if v, ok := msg.Message["source"].(string); ok {
 		e.Hostname = v
 	}
-	if v, ok := msg.Message["_event_type"].(string); ok {
+	if v, ok := msg.Message["event_type"].(string); ok {
 		e.EventType = v
 	}
-	if v, ok := msg.Message["_user"].(string); ok {
+	if v, ok := msg.Message["user"].(string); ok {
 		e.User = v
 	}
-	if v, ok := msg.Message["_source_ip"].(string); ok {
+	if v, ok := msg.Message["source_ip"].(string); ok {
 		e.SourceIP = v
 	}
-	if v, ok := msg.Message["_dest_ip"].(string); ok {
+	if v, ok := msg.Message["dest_ip"].(string); ok {
 		e.DestIP = v
 	}
-	if v, ok := msg.Message["_process_name"].(string); ok {
+	if v, ok := msg.Message["process_name"].(string); ok {
 		e.ProcessName = v
 	}
-	if v, ok := msg.Message["_command_line"].(string); ok {
+	if v, ok := msg.Message["command_line"].(string); ok {
 		e.CommandLine = v
 	}
-	if v, ok := msg.Message["_parent_process"].(string); ok {
+	if v, ok := msg.Message["parent_process"].(string); ok {
 		e.ParentProcess = v
 	}
-	if v, ok := msg.Message["_event_id"].(string); ok {
+	if v, ok := msg.Message["event_id"].(string); ok {
 		e.EventID = v
 	}
-	if v, ok := msg.Message["_log_type"].(string); ok {
+	if v, ok := msg.Message["log_type"].(string); ok {
 		e.LogType = v
 	}
-	if v, ok := msg.Message["_session_id"].(string); ok {
+	if v, ok := msg.Message["session_id"].(string); ok {
 		e.SessionID = v
 	}
-	if v, ok := msg.Message["_department"].(string); ok {
+	if v, ok := msg.Message["department"].(string); ok {
 		e.Department = v
 	}
-	if v, ok := msg.Message["_location"].(string); ok {
+	if v, ok := msg.Message["location"].(string); ok {
 		e.Location = v
 	}
-	if v, ok := msg.Message["_device_type"].(string); ok {
+	if v, ok := msg.Message["device_type"].(string); ok {
 		e.DeviceType = v
 	}
-	if v, ok := msg.Message["_success"].(string); ok {
+	if v, ok := msg.Message["success"].(string); ok {
 		e.Success = v == "true"
 	}
-	if v, ok := msg.Message["_port"].(string); ok {
+	if v, ok := msg.Message["port"].(string); ok {
 		e.Port = v
 	}
-	if v, ok := msg.Message["_protocol"].(string); ok {
+	if v, ok := msg.Message["protocol"].(string); ok {
 		e.Protocol = v
 	}
-	if v, ok := msg.Message["_file_path"].(string); ok {
+	if v, ok := msg.Message["file_path"].(string); ok {
 		e.FilePath = v
 	}
-	if v, ok := msg.Message["_severity"].(string); ok {
+	if v, ok := msg.Message["severity"].(string); ok {
 		e.Severity = v
 	}
-	if v, ok := msg.Message["_error"].(string); ok {
+	if v, ok := msg.Message["error"].(string); ok {
 		e.Error = v
 	}
 

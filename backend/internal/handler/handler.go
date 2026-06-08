@@ -107,7 +107,7 @@ func (h *Handler) GetStats(c *gin.Context) {
 }
 
 func (h *Handler) SyncFromGraylog(c *gin.Context) {
-	batchSize := 500
+	batchSize := 5000
 	totalSynced := 0
 
 	err := h.graylogClient.FetchAllEvents("*", batchSize, func(events []graylog.Event) error {
