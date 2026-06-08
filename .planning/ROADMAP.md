@@ -30,9 +30,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: TBD
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-1: Graylog REST API Integration — [details](phases/01-data-foundation/01-1-graylog-api.md)
+- [ ] 01-2: SQLite Schema Design — [details](phases/01-data-foundation/01-2-sqlite-schema.md)
+- [ ] 01-3: Event Field Normalization — [details](phases/01-data-foundation/01-3-normalization.md)
 
 ### Phase 2: Incident Intelligence
 **Goal**: Analyst sees related events grouped into incidents with MITRE ATT&CK technique labels

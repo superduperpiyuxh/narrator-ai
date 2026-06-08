@@ -1,13 +1,13 @@
 services:
   mongo:
-    image: mongo:6.0
+    image: mongo:7.0
     container_name: graylog-mongo
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
 
   opensearch:
-    image: public.ecr.aws/opensearchproject/opensearch:2.11.0
+    image: opensearchproject/opensearch:2.11.0
     container_name: graylog-opensearch
     restart: unless-stopped
     environment:
@@ -18,7 +18,7 @@ services:
       - opensearch_data:/usr/share/opensearch/data
 
   graylog:
-    image: graylog/graylog:5.2
+    image: graylog/graylog:7.1.2
     container_name: graylog
     restart: unless-stopped
     depends_on:

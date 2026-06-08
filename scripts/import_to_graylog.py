@@ -3,6 +3,7 @@
 
 import json
 import sys
+import time
 import requests
 from datetime import datetime
 
@@ -12,44 +13,15 @@ GRAYLOG_PASS = "admin"
 GELF_INPUT_PORT = 12201
 
 def setup_gelf_input():
-    """Create a GELF HTTP input in Graylog."""
-    # Check if input already exists
+    """Check if GELF HTTP input exists, don't create if it does."""
     resp = requests.get(f"{GRAYLOG_URL}/api/system/inputs", auth=(GRAYLOG_USER, GRAYLOG_PASS))
     if resp.ok:
         for inp in resp.json().get("inputs", []):
-            if inp.get("title") == "GELF HTTP for demo import":
-                print(f"Input already exists: {inp['id']}")
+            if "GELF" in inp.get("title", "").upper() and "HTTP" in inp.get("title", "").upper():
+                print(f"Using existing input: {inp['id']}")
                 return inp["id"]
-
-    # Create GELF HTTP input
-    payload = {
-        "title": "GELF HTTP for demo import",
-        "type": "org.graylog2.inputs.gelf.http.GELFHttpInput",
-        "global": True,
-        "configuration": {
-            "bind_address": "0.0.0.0",
-            "port": GELF_INPUT_PORT,
-            "recv_buffer_size": 1048576,
-            "number_worker_threads": 4,
-            "tcp_keepalive": False,
-            "tls": False,
-            "max_message_size": 2097152,
-            "max_header_size": 65536
-        }
-    }
-    resp = requests.post(
-        f"{GRAYLOG_URL}/api/system/inputs",
-        json=payload,
-        auth=(GRAYLOG_USER, GRAYLOG_PASS),
-        headers={"Content-Type": "application/json", "X-Requested-By": "python-import"}
-    )
-    if resp.ok:
-        inp = resp.json()
-        print(f"Created GELF input: {inp['id']}")
-        return inp["id"]
-    else:
-        print(f"Failed to create input: {resp.status_code} {resp.text}")
-        return None
+    print("No GELF HTTP input found. Create one in Graylog UI first.")
+    return None
 
 def convert_to_gelf(event):
     """Convert a security event to GELF format."""
@@ -94,11 +66,10 @@ def convert_to_gelf(event):
 
     return gelf
 
-def import_file(filepath, batch_size=50):
-    """Import a JSON file into Graylog via GELF HTTP."""
+def import_file(filepath):
+    """Import a JSON file into Graylog via GELF HTTP (one event per request)."""
     total = 0
     errors = 0
-    batch = []
 
     print(f"Importing {filepath}...")
     with open(filepath) as f:
@@ -109,37 +80,39 @@ def import_file(filepath, batch_size=50):
             try:
                 event = json.loads(line)
                 gelf = convert_to_gelf(event)
-                batch.append(json.dumps(gelf))
-                total += 1
-
-                if len(batch) >= batch_size:
-                    send_batch(batch)
-                    batch = []
+                if send_event(json.dumps(gelf)):
+                    total += 1
+                else:
+                    errors += 1
+                if total % 5000 == 0:
                     print(f"  Imported {total} events...")
             except json.JSONDecodeError:
                 errors += 1
             except Exception as e:
                 errors += 1
 
-    if batch:
-        send_batch(batch)
-
     print(f"Done: {total} imported, {errors} errors")
     return total
 
-def send_batch(batch):
-    """Send a batch of GELF messages to Graylog."""
-    try:
-        resp = requests.post(
-            f"http://localhost:{GELF_INPUT_PORT}/gelf",
-            data="\n".join(batch),
-            headers={"Content-Type": "application/x-gelf"},
-            timeout=30
-        )
-        if not resp.ok:
-            print(f"  Batch send failed: {resp.status_code}")
-    except Exception as e:
-        print(f"  Batch send error: {e}")
+def send_event(gelf_json, retries=3):
+    """Send a single GELF message to Graylog with retry logic."""
+    for attempt in range(retries):
+        try:
+            resp = requests.post(
+                f"http://localhost:{GELF_INPUT_PORT}/gelf",
+                data=gelf_json,
+                headers={"Content-Type": "application/x-gelf"},
+                timeout=30
+            )
+            if resp.ok:
+                return True
+            else:
+                print(f"  Error {resp.status_code}: {resp.text[:100]}")
+        except requests.exceptions.ConnectionError:
+            time.sleep(2)
+        except Exception as e:
+            time.sleep(1)
+    return False
 
 if __name__ == "__main__":
     print("Setting up Graylog GELF input...")
