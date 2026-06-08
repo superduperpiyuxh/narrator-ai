@@ -1,10 +1,10 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"time"
 )
 
 type Event struct {
@@ -34,21 +34,29 @@ type Event struct {
 	CreatedAt     string                 `json:"created_at"`
 }
 
+const insertEventSQL = `
+	INSERT OR IGNORE INTO events 
+	(timestamp, hostname, event_type, event_id, user_name, source_ip, dest_ip,
+	 process_name, command_line, parent_process, log_type, session_id,
+	 department, location, device_type, success, port, protocol, file_path,
+	 severity, error, raw_json)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+const selectColumns = `id, timestamp, hostname, event_type, event_id, user_name,
+	source_ip, dest_ip, process_name, command_line, parent_process,
+	log_type, session_id, department, location, device_type,
+	success, port, protocol, file_path, severity, error, raw_json, created_at`
+
 func (db *DB) InsertEvents(events []Event) error {
-	tx, err := db.conn.Begin()
+	ctx := context.Background()
+
+	tx, err := db.conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(`
-		INSERT OR IGNORE INTO events 
-		(timestamp, hostname, event_type, event_id, user_name, source_ip, dest_ip,
-		 process_name, command_line, parent_process, log_type, session_id,
-		 department, location, device_type, success, port, protocol, file_path,
-		 severity, error, raw_json)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`)
+	stmt, err := tx.PrepareContext(ctx, insertEventSQL)
 	if err != nil {
 		return fmt.Errorf("prepare statement: %w", err)
 	}
@@ -56,7 +64,7 @@ func (db *DB) InsertEvents(events []Event) error {
 
 	for _, e := range events {
 		rawJSON, _ := json.Marshal(e.RawJSON)
-		_, err := stmt.Exec(
+		_, err := stmt.ExecContext(ctx,
 			e.Timestamp, e.Hostname, e.EventType, e.EventID, e.UserName,
 			e.SourceIP, e.DestIP, e.ProcessName, e.CommandLine, e.ParentProcess,
 			e.LogType, e.SessionID, e.Department, e.Location, e.DeviceType,
@@ -73,16 +81,13 @@ func (db *DB) InsertEvents(events []Event) error {
 
 func (db *DB) GetEvents(limit, offset int) ([]Event, int, error) {
 	var total int
-	err := db.conn.QueryRow("SELECT COUNT(*) FROM events").Scan(&total)
+	err := db.conn.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM events").Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count events: %w", err)
 	}
 
-	rows, err := db.conn.Query(`
-		SELECT id, timestamp, hostname, event_type, event_id, user_name,
-		       source_ip, dest_ip, process_name, command_line, parent_process,
-		       log_type, session_id, department, location, device_type,
-		       success, port, protocol, file_path, severity, error, raw_json, created_at
+	rows, err := db.conn.QueryContext(context.Background(), `
+		SELECT `+selectColumns+`
 		FROM events ORDER BY timestamp DESC LIMIT ? OFFSET ?
 	`, limit, offset)
 	if err != nil {
@@ -95,11 +100,8 @@ func (db *DB) GetEvents(limit, offset int) ([]Event, int, error) {
 }
 
 func (db *DB) GetEventsByHost(hostname string) ([]Event, error) {
-	rows, err := db.conn.Query(`
-		SELECT id, timestamp, hostname, event_type, event_id, user_name,
-		       source_ip, dest_ip, process_name, command_line, parent_process,
-		       log_type, session_id, department, location, device_type,
-		       success, port, protocol, file_path, severity, error, raw_json, created_at
+	rows, err := db.conn.QueryContext(context.Background(), `
+		SELECT `+selectColumns+`
 		FROM events WHERE hostname = ? ORDER BY timestamp DESC
 	`, hostname)
 	if err != nil {
@@ -110,11 +112,8 @@ func (db *DB) GetEventsByHost(hostname string) ([]Event, error) {
 }
 
 func (db *DB) GetEventsByType(eventType string) ([]Event, error) {
-	rows, err := db.conn.Query(`
-		SELECT id, timestamp, hostname, event_type, event_id, user_name,
-		       source_ip, dest_ip, process_name, command_line, parent_process,
-		       log_type, session_id, department, location, device_type,
-		       success, port, protocol, file_path, severity, error, raw_json, created_at
+	rows, err := db.conn.QueryContext(context.Background(), `
+		SELECT `+selectColumns+`
 		FROM events WHERE event_type = ? ORDER BY timestamp DESC
 	`, eventType)
 	if err != nil {
@@ -126,11 +125,8 @@ func (db *DB) GetEventsByType(eventType string) ([]Event, error) {
 
 func (db *DB) SearchEvents(query string) ([]Event, error) {
 	like := "%" + query + "%"
-	rows, err := db.conn.Query(`
-		SELECT id, timestamp, hostname, event_type, event_id, user_name,
-		       source_ip, dest_ip, process_name, command_line, parent_process,
-		       log_type, session_id, department, location, device_type,
-		       success, port, protocol, file_path, severity, error, raw_json, created_at
+	rows, err := db.conn.QueryContext(context.Background(), `
+		SELECT `+selectColumns+`
 		FROM events 
 		WHERE hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
 		   OR source_ip LIKE ? OR command_line LIKE ?
@@ -145,24 +141,27 @@ func (db *DB) SearchEvents(query string) ([]Event, error) {
 
 func (db *DB) GetStats() (map[string]interface{}, error) {
 	stats := map[string]interface{}{}
+	ctx := context.Background()
 
 	var count int
-	db.conn.QueryRow("SELECT COUNT(*) FROM events").Scan(&count)
+	if err := db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM events").Scan(&count); err != nil {
+		return nil, fmt.Errorf("count events: %w", err)
+	}
 	stats["total_events"] = count
 
 	var hosts int
-	db.conn.QueryRow("SELECT COUNT(DISTINCT hostname) FROM events").Scan(&hosts)
+	db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT hostname) FROM events").Scan(&hosts)
 	stats["unique_hosts"] = hosts
 
 	var users int
-	db.conn.QueryRow("SELECT COUNT(DISTINCT user_name) FROM events").Scan(&users)
+	db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT user_name) FROM events").Scan(&users)
 	stats["unique_users"] = users
 
 	var ipCount int
-	db.conn.QueryRow("SELECT COUNT(DISTINCT source_ip) FROM events").Scan(&ipCount)
+	db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT source_ip) FROM events").Scan(&ipCount)
 	stats["unique_ips"] = ipCount
 
-	rows, err := db.conn.Query("SELECT event_type, COUNT(*) FROM events GROUP BY event_type ORDER BY COUNT(*) DESC LIMIT 10")
+	rows, err := db.conn.QueryContext(ctx, "SELECT event_type, COUNT(*) FROM events GROUP BY event_type ORDER BY COUNT(*) DESC LIMIT 10")
 	if err == nil {
 		defer rows.Close()
 		eventTypes := map[string]int{}
@@ -175,9 +174,12 @@ func (db *DB) GetStats() (map[string]interface{}, error) {
 		stats["event_types"] = eventTypes
 	}
 
-	var minTS, maxTS string
-	db.conn.QueryRow("SELECT MIN(timestamp), MAX(timestamp) FROM events").Scan(&minTS, &maxTS)
-	stats["time_range"] = map[string]string{"start": minTS, "end": maxTS}
+	var minTS, maxTS sql.NullString
+	db.conn.QueryRowContext(ctx, "SELECT MIN(timestamp), MAX(timestamp) FROM events").Scan(&minTS, &maxTS)
+	stats["time_range"] = map[string]string{
+		"start": minTS.String,
+		"end":   maxTS.String,
+	}
 
 	return stats, nil
 }
@@ -203,8 +205,4 @@ func scanEvents(rows *sql.Rows) ([]Event, error) {
 		events = append(events, e)
 	}
 	return events, nil
-}
-
-func init() {
-	_ = time.Now()
 }

@@ -1,10 +1,12 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -19,10 +21,14 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("create db directory: %w", err)
 	}
 
-	conn, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_busy_timeout=5000&_synchronous=NORMAL")
+	conn, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_busy_timeout=5000&_synchronous=NORMAL&_foreign_keys=ON")
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
+
+	conn.SetMaxOpenConns(1)
+	conn.SetMaxIdleConns(1)
+	conn.SetConnMaxLifetime(0)
 
 	if err := conn.Ping(); err != nil {
 		return nil, fmt.Errorf("ping database: %w", err)
@@ -80,4 +86,10 @@ func (db *DB) migrate() error {
 
 	_, err := db.conn.Exec(schema)
 	return err
+}
+
+func (db *DB) HealthCheck() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	return db.conn.PingContext(ctx)
 }
