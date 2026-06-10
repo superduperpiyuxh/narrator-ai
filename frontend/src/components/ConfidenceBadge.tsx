@@ -13,6 +13,7 @@ export function ConfidenceBadge({ confidence, className }: ConfidenceBadgeProps)
         getConfidenceColor(confidence),
         className
       )}
+      aria-label={`Confidence: ${formatConfidence(confidence)}`}
     >
       {formatConfidence(confidence)} confidence
     </span>

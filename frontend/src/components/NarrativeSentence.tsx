@@ -47,6 +47,15 @@ export function NarrativeSentence({
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onHover(sentence.source_event_ids);
+        }
+      }}
+      aria-label={`Narrative sentence ${index + 1}: ${sentence.text}`}
     >
       <p className="text-sm leading-relaxed">{sentence.text}</p>
       <div className="flex items-center gap-3 mt-2">

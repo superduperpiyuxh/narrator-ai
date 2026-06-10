@@ -64,9 +64,9 @@ export function FeedbackForm({ narrativeId, incidentId, existingFeedback }: Feed
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mt-6">
       <p className="text-sm text-zinc-400 mb-4">Was this narrative helpful?</p>
-      
+
       {/* Rating buttons */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4" role="radiogroup" aria-label="Narrative rating">
         <button
           onClick={() => setRating('up')}
           className={cn(
@@ -75,8 +75,11 @@ export function FeedbackForm({ narrativeId, incidentId, existingFeedback }: Feed
               ? 'bg-green-900/30 text-green-400 border border-green-700'
               : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border border-transparent'
           )}
+          role="radio"
+          aria-checked={rating === 'up'}
+          aria-label="Yes, this narrative was helpful"
         >
-          <ThumbsUp className="w-4 h-4" />
+          <ThumbsUp className="w-4 h-4" aria-hidden="true" />
           Yes
         </button>
         <button
@@ -87,14 +90,21 @@ export function FeedbackForm({ narrativeId, incidentId, existingFeedback }: Feed
               ? 'bg-red-900/30 text-red-400 border border-red-700'
               : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border border-transparent'
           )}
+          role="radio"
+          aria-checked={rating === 'down'}
+          aria-label="No, this narrative was not helpful"
         >
-          <ThumbsDown className="w-4 h-4" />
+          <ThumbsDown className="w-4 h-4" aria-hidden="true" />
           No
         </button>
       </div>
 
       {/* Notes textarea */}
+      <label htmlFor={`feedback-notes-${narrativeId}`} className="sr-only">
+        Optional feedback notes
+      </label>
       <textarea
+        id={`feedback-notes-${narrativeId}`}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Optional notes about this narrative..."
@@ -113,6 +123,7 @@ export function FeedbackForm({ narrativeId, incidentId, existingFeedback }: Feed
             ? 'bg-blue-600 hover:bg-blue-500 text-white'
             : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
         )}
+        aria-busy={isSubmitting}
       >
         {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
       </button>

@@ -17,8 +17,8 @@ export function FeedbackButton({ narrativeId, incidentId, existingFeedback }: Fe
 
   if (existingFeedback) {
     return (
-      <div className="flex items-center gap-2 text-green-400 text-sm">
-        <CheckCircle className="w-4 h-4" />
+      <div className="flex items-center gap-2 text-green-400 text-sm" role="status">
+        <CheckCircle className="w-4 h-4" aria-hidden="true" />
         Feedback submitted
       </div>
     );
@@ -34,8 +34,10 @@ export function FeedbackButton({ narrativeId, incidentId, existingFeedback }: Fe
             ? 'bg-zinc-700 text-zinc-200'
             : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
         )}
+        aria-expanded={isExpanded}
+        aria-label="Rate this narrative"
       >
-        <MessageSquare className="w-4 h-4" />
+        <MessageSquare className="w-4 h-4" aria-hidden="true" />
         Rate this narrative
       </button>
       {isExpanded && (

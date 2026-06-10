@@ -20,6 +20,8 @@ export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
         colors[severity.toLowerCase()] || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
         className
       )}
+      role="status"
+      aria-label={`Severity: ${severity}`}
     >
       {severity.toUpperCase()}
     </span>
