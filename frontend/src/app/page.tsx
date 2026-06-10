@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { API_BASE, isAuthenticated, clearToken } from '@/lib/api';
 import { IncidentCard } from '@/components/IncidentCard';
-import { DashboardControls } from '@/components/DashboardControls';
-import { Shield } from 'lucide-react';
+import { DashboardControls, type DashboardControlsHandle } from '@/components/DashboardControls';
+import { KeyboardShortcutsModal } from '@/components/KeyboardShortcutsModal';
+import { Shield, Keyboard } from 'lucide-react';
 import type { Incident, IncidentStats } from '@/lib/types';
 
 function getHeaders() {
@@ -16,6 +18,7 @@ function getHeaders() {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<IncidentStats | null>(null);
@@ -26,6 +29,11 @@ export default function HomePage() {
   const [status, setStatus] = useState('');
   const [sourceIP, setSourceIP] = useState('');
   const limit = 24;
+
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const dashboardControlsRef = useRef<DashboardControlsHandle>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,6 +68,94 @@ export default function HomePage() {
     loadData();
   }, [page, severity, status, sourceIP]);
 
+  // Reset selected index when incidents change
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [incidents]);
+
+  // Keyboard shortcuts handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Don't handle shortcuts when typing in input fields
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      ) {
+        // Allow Escape to blur input fields
+        if (e.key === 'Escape') {
+          (target as HTMLElement).blur();
+          dashboardControlsRef.current?.clearSearch();
+        }
+        return;
+      }
+
+      // Handle modal open state
+      if (showShortcuts) {
+        if (e.key === 'Escape' || e.key === '?') {
+          setShowShortcuts(false);
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Handle pending g key for go-to shortcuts
+      if (pendingKey === 'g') {
+        setPendingKey(null);
+        if (e.key === 'h') {
+          router.push('/');
+          e.preventDefault();
+        } else if (e.key === 's') {
+          router.push('/settings');
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Single key shortcuts
+      switch (e.key) {
+        case '/':
+          e.preventDefault();
+          dashboardControlsRef.current?.focusSearch();
+          break;
+        case '?':
+          e.preventDefault();
+          setShowShortcuts(true);
+          break;
+        case 'j':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.min(prev + 1, incidents.length - 1));
+          break;
+        case 'k':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < incidents.length) {
+            router.push(`/incidents/${incidents[selectedIndex].id}`);
+          }
+          break;
+        case 'g':
+          e.preventDefault();
+          setPendingKey('g');
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setSelectedIndex(-1);
+          break;
+      }
+    },
+    [showShortcuts, pendingKey, selectedIndex, incidents, router]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const handleLogout = () => {
     clearToken();
     window.location.reload();
@@ -88,6 +184,14 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="p-2 text-zinc-500 hover:text-zinc-300 transition-colors rounded"
+                aria-label="Show keyboard shortcuts"
+                title="Keyboard shortcuts (?)"
+              >
+                <Keyboard className="w-5 h-5" />
+              </button>
               {isAuthenticated() ? (
                 <>
                   <Link href="/settings" className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm">
@@ -145,6 +249,7 @@ export default function HomePage() {
         )}
 
         <DashboardControls
+          ref={dashboardControlsRef}
           currentPage={page}
           totalPages={totalPages}
           total={total}
@@ -155,8 +260,12 @@ export default function HomePage() {
 
         {incidents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Incidents">
-            {incidents.map((incident) => (
-              <IncidentCard key={incident.id} incident={incident} />
+            {incidents.map((incident, index) => (
+              <IncidentCard
+                key={incident.id}
+                incident={incident}
+                selected={index === selectedIndex}
+              />
             ))}
           </div>
         ) : (
@@ -187,6 +296,11 @@ export default function HomePage() {
           </nav>
         )}
       </div>
+
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

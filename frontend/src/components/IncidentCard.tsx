@@ -4,21 +4,28 @@ import { Incident } from '@/lib/types';
 import { SeverityBadge } from './SeverityBadge';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { TechniqueBadge } from './TechniqueBadge';
-import { formatTimestamp, truncate } from '@/lib/utils';
+import { formatTimestamp, truncate, cn } from '@/lib/utils';
 
 interface IncidentCardProps {
   incident: Incident;
+  selected?: boolean;
 }
 
-export function IncidentCard({ incident }: IncidentCardProps) {
+export function IncidentCard({ incident, selected = false }: IncidentCardProps) {
   const displayTechniques = incident.techniques?.slice(0, 3) || [];
   const remainingCount = (incident.techniques?.length || 0) - 3;
 
   return (
     <a
       href={`/incidents/${incident.id}`}
-      className="block bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-600 transition-colors cursor-pointer h-full focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2"
+      className={cn(
+        'block bg-zinc-900 border rounded-xl p-6 transition-colors cursor-pointer h-full focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2',
+        selected
+          ? 'border-blue-500 ring-1 ring-blue-500/30'
+          : 'border-zinc-800 hover:border-zinc-600'
+      )}
       aria-label={`Incident ${incident.id}: ${incident.title}, severity ${incident.severity}, ${incident.event_count} events`}
+      aria-selected={selected}
     >
       {/* Top row */}
       <div className="flex items-center justify-between mb-3">

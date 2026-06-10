@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
+
+export interface DashboardControlsHandle {
+  focusSearch: () => void;
+  clearSearch: () => void;
+}
 
 interface DashboardControlsProps {
   currentPage: number;
@@ -13,16 +18,31 @@ interface DashboardControlsProps {
   currentSourceIP: string;
 }
 
-export function DashboardControls({
-  currentPage,
-  totalPages,
-  total,
-  currentSeverity,
-  currentStatus,
-  currentSourceIP,
-}: DashboardControlsProps) {
-  const router = useRouter();
-  const [searchIP, setSearchIP] = useState(currentSourceIP);
+export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardControlsProps>(
+  function DashboardControls(
+    {
+      currentPage,
+      totalPages,
+      total,
+      currentSeverity,
+      currentStatus,
+      currentSourceIP,
+    },
+    ref
+  ) {
+    const router = useRouter();
+    const [searchIP, setSearchIP] = useState(currentSourceIP);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useImperativeHandle(ref, () => ({
+      focusSearch: () => {
+        searchInputRef.current?.focus();
+      },
+      clearSearch: () => {
+        setSearchIP('');
+        searchInputRef.current?.focus();
+      },
+    }));
 
   const buildURL = (overrides: Record<string, string>) => {
     const params = new URLSearchParams();
@@ -61,6 +81,7 @@ export function DashboardControls({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" aria-hidden="true" />
             <input
               id="source-ip-search"
+              ref={searchInputRef}
               type="text"
               value={searchIP}
               onChange={(e) => setSearchIP(e.target.value)}
@@ -134,4 +155,4 @@ export function DashboardControls({
       )}
     </div>
   );
-}
+});
