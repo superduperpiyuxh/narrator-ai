@@ -27,6 +27,7 @@ func main() {
 
 	h := handler.New(db, cfg.DataDir)
 	ih := handler.NewIncidentHandler(db)
+	nh := handler.NewNarrativeHandler(db, cfg.OpenRouterKey)
 
 	r := gin.Default()
 
@@ -53,6 +54,10 @@ func main() {
 	r.GET("/api/incidents/:id/events", ih.GetIncidentEvents)
 	r.GET("/api/incidents/stats", ih.GetIncidentStats)
 	r.GET("/api/techniques", ih.GetTechniques)
+
+	r.POST("/api/incidents/:id/narrative", nh.GenerateNarrative)
+	r.GET("/api/incidents/:id/narrative", nh.GetNarrative)
+	r.GET("/api/narratives/:id", nh.GetNarrativeSourceEvents)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

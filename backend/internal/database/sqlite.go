@@ -141,6 +141,23 @@ func (db *DB) migrate() error {
 	CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
 	CREATE INDEX IF NOT EXISTS idx_incident_events_incident ON incident_events(incident_id);
 	CREATE INDEX IF NOT EXISTS idx_incident_events_event ON incident_events(event_id);
+
+	CREATE TABLE IF NOT EXISTS narratives (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		incident_id INTEGER NOT NULL,
+		summary TEXT NOT NULL,
+		confidence REAL NOT NULL DEFAULT 0.0,
+		sentences TEXT NOT NULL,
+		model_used TEXT NOT NULL,
+		temperature REAL NOT NULL,
+		tokens_used INTEGER DEFAULT 0,
+		generation_time_ms INTEGER DEFAULT 0,
+		created_at TEXT DEFAULT (datetime('now')),
+		updated_at TEXT DEFAULT (datetime('now')),
+		FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_narratives_incident ON narratives(incident_id);
 	`
 
 	_, err := db.conn.Exec(schema)

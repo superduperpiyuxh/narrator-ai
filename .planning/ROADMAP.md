@@ -60,12 +60,12 @@ Plans:
   3. Each narrative displays a confidence score (0.0-1.0) based on event coverage
   4. User-controlled fields are sanitized before entering LLM prompts (XML wrapping + pattern detection)
   5. Narrative output is validated: all cited events must exist in the database
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01: Database Schema + LLM Client Foundation — [details](phases/03-narrative-engine/03-01-PLAN.md)
+- [ ] 03-02: Security Pipeline + Narrative Generator — [details](phases/03-narrative-engine/03-02-PLAN.md)
+- [ ] 03-03: API Layer + Integration — [details](phases/03-narrative-engine/03-03-PLAN.md)
 
 ### Phase 4: Story Dashboard
 **Goal**: Analyst browses incidents, reads story cards, traces sources, and provides feedback
