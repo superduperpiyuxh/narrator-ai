@@ -12,18 +12,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
-	"github.com/superduperpiyuxh/narrator-ai/backend/internal/graylog"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/normalizer"
 )
 
 type Handler struct {
-	db            *database.DB
-	graylogClient *graylog.Client
-	dataDir       string
+	db      *database.DB
+	dataDir string
 }
 
-func New(db *database.DB, gc *graylog.Client, dataDir string) *Handler {
-	return &Handler{db: db, graylogClient: gc, dataDir: dataDir}
+func New(db *database.DB, dataDir string) *Handler {
+	return &Handler{db: db, dataDir: dataDir}
 }
 
 func (h *Handler) Health(c *gin.Context) {
@@ -113,35 +111,17 @@ func (h *Handler) GetStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-func (h *Handler) SyncFromGraylog(c *gin.Context) {
-	batchSize := 5000
-	totalSynced := 0
-
-	err := h.graylogClient.FetchAllEvents("*", batchSize, func(events []graylog.Event) error {
-		normalized := make([]database.Event, len(events))
-		for i, e := range events {
-			n := normalizer.NormalizeEvent(e)
-			normalized[i] = toDBEvent(n)
+func (h *Handler) ImportLocal(c *gin.Context) {
+	var matches []string
+	err := filepath.Walk(h.dataDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
 		}
-
-		if err := h.db.InsertEvents(normalized); err != nil {
-			return err
+		if !info.IsDir() && strings.HasSuffix(path, ".json") {
+			matches = append(matches, path)
 		}
-		totalSynced += len(normalized)
 		return nil
 	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"synced": totalSynced})
-}
-
-func (h *Handler) ImportLocal(c *gin.Context) {
-	pattern := filepath.Join(h.dataDir, "**", "*.json")
-	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -211,8 +191,8 @@ func (h *Handler) importFile(filePath string) (int, error) {
 	return total, scanner.Err()
 }
 
-func mapToEvent(raw map[string]interface{}) graylog.Event {
-	e := graylog.Event{RawJSON: raw}
+func mapToEvent(raw map[string]interface{}) normalizer.Event {
+	e := normalizer.Event{RawJSON: raw}
 
 	getStr := func(key string) string {
 		if v, ok := raw[key]; ok {
@@ -251,7 +231,7 @@ func mapToEvent(raw map[string]interface{}) graylog.Event {
 	return e
 }
 
-func toDBEvent(e graylog.Event) database.Event {
+func toDBEvent(e normalizer.Event) database.Event {
 	return database.Event{
 		Timestamp:     e.Timestamp,
 		Hostname:      e.Hostname,

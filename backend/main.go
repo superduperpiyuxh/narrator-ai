@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/config"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
-	"github.com/superduperpiyuxh/narrator-ai/backend/internal/graylog"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/handler"
 )
 
@@ -26,9 +25,7 @@ func main() {
 	}
 	defer db.Close()
 
-	graylogClient := graylog.NewClient(cfg.GraylogURL, cfg.GraylogUser, cfg.GraylogPass)
-
-	h := handler.New(db, graylogClient, cfg.DataDir)
+	h := handler.New(db, cfg.DataDir)
 
 	r := gin.Default()
 
@@ -47,7 +44,6 @@ func main() {
 	r.GET("/api/events/host/:hostname", h.GetEventsByHost)
 	r.GET("/api/events/type/:eventType", h.GetEventsByType)
 	r.GET("/api/stats", h.GetStats)
-	r.POST("/api/sync", h.SyncFromGraylog)
 	r.POST("/api/import", h.ImportLocal)
 
 	srv := &http.Server{

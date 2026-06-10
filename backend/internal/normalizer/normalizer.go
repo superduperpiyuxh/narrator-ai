@@ -4,9 +4,32 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/superduperpiyuxh/narrator-ai/backend/internal/graylog"
 )
+
+type Event struct {
+	Timestamp     string
+	Hostname      string
+	EventType     string
+	EventID       string
+	User          string
+	SourceIP      string
+	DestIP        string
+	ProcessName   string
+	CommandLine   string
+	ParentProcess string
+	LogType       string
+	SessionID     string
+	Department    string
+	Location      string
+	DeviceType    string
+	Success       bool
+	Port          string
+	Protocol      string
+	FilePath      string
+	Severity      string
+	Error         string
+	RawJSON       map[string]interface{}
+}
 
 var eventTypeMap = map[string]string{
 	"process_start":            "process_activity",
@@ -29,7 +52,7 @@ var eventTypeMap = map[string]string{
 
 var ipRegex = regexp.MustCompile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$`)
 
-func NormalizeEvent(raw graylog.Event) graylog.Event {
+func NormalizeEvent(raw Event) Event {
 	e := raw
 
 	e.Timestamp = normalizeTimestamp(e.Timestamp)
