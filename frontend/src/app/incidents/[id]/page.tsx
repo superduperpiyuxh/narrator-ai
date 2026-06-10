@@ -1,4 +1,4 @@
-import { fetchIncident, fetchNarrative } from '@/lib/api';
+import { fetchIncident, fetchNarrative, getFeedback } from '@/lib/api';
 import { StoryCard } from '@/components/StoryCard';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { TechniqueBadge } from '@/components/TechniqueBadge';
@@ -15,6 +15,7 @@ export default async function IncidentDetailPage({
 
   let incident = null;
   let narrative = null;
+  let feedback = null;
   let error: string | null = null;
 
   try {
@@ -28,6 +29,16 @@ export default async function IncidentDetailPage({
     try {
       const data = await fetchNarrative(incidentId);
       narrative = data.narrative;
+      
+      // Fetch feedback if narrative exists
+      if (narrative) {
+        try {
+          const feedbackData = await getFeedback(narrative.id);
+          feedback = feedbackData.feedback;
+        } catch {
+          // Feedback might not exist yet
+        }
+      }
     } catch {
       // Narrative might not exist yet
     }
@@ -122,7 +133,7 @@ export default async function IncidentDetailPage({
 
         {/* Story Card */}
         {narrative ? (
-          <StoryCard narrative={narrative} incidentId={incidentId} />
+          <StoryCard narrative={narrative} incidentId={incidentId} existingFeedback={feedback} />
         ) : (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
             <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" />

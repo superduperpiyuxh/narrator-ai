@@ -1,18 +1,20 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Narrative, Sentence } from '@/lib/types';
+import { Narrative, Sentence, Feedback } from '@/lib/types';
 import { NarrativeSentence } from './NarrativeSentence';
 import { RawEventViewer } from './RawEventViewer';
 import { ConfidenceBadge } from './ConfidenceBadge';
+import { FeedbackButton } from './FeedbackButton';
 import { Cpu } from 'lucide-react';
 
 interface StoryCardProps {
   narrative: Narrative;
   incidentId: number;
+  existingFeedback?: Feedback | null;
 }
 
-export function StoryCard({ narrative, incidentId }: StoryCardProps) {
+export function StoryCard({ narrative, incidentId, existingFeedback }: StoryCardProps) {
   const [hoveredSentenceIndex, setHoveredSentenceIndex] = useState<number | null>(null);
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
 
@@ -79,11 +81,18 @@ export function StoryCard({ narrative, incidentId }: StoryCardProps) {
 
         {/* Metadata footer */}
         <div className="px-6 py-3 border-t border-zinc-800 bg-zinc-950/50">
-          <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
-            <span>{narrative.tokens_used.toLocaleString()} tokens</span>
-            <span>{narrative.generation_time_ms}ms</span>
-            <span>T={narrative.temperature}</span>
-            <Cpu className="w-3 h-3" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
+              <span>{narrative.tokens_used.toLocaleString()} tokens</span>
+              <span>{narrative.generation_time_ms}ms</span>
+              <span>T={narrative.temperature}</span>
+              <Cpu className="w-3 h-3" />
+            </div>
+            <FeedbackButton
+              narrativeId={narrative.id}
+              incidentId={incidentId}
+              existingFeedback={existingFeedback || null}
+            />
           </div>
         </div>
       </div>
