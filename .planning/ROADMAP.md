@@ -43,12 +43,12 @@ Plans:
   2. Each incident tracks start/end times, unique users, unique IPs, and event count
   3. MITRE ATT&CK technique IDs (T1110, T1021, etc.) appear in incident metadata via STIX JSON lookup
   4. At least 10 common attack patterns are mapped (brute force, lateral movement, exfiltration, privilege escalation)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01: Database Schema + ATT&CK Mapping Engine — [details](phases/02-incident-intelligence/02-01-PLAN.md)
+- [ ] 02-02: Incident Grouping Engine + Severity — [details](phases/02-incident-intelligence/02-02-PLAN.md)
+- [ ] 02-03: API Layer + End-to-End Verification — [details](phases/02-incident-intelligence/02-03-PLAN.md)
 
 ### Phase 3: Narrative Engine
 **Goal**: Analyst receives AI-generated attack narratives with confidence scores, source tracing, and injection protection
@@ -91,6 +91,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 0/3 | Not started | - |
-| 2. Incident Intelligence | 0/3 | Not started | - |
+| 2. Incident Intelligence | 0/3 | Planned | - |
 | 3. Narrative Engine | 0/3 | Not started | - |
 | 4. Story Dashboard | 0/3 | Not started | - |
