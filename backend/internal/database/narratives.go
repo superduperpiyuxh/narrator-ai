@@ -9,6 +9,7 @@ import (
 type Narrative struct {
 	ID               int64   `json:"id"`
 	IncidentID       int64   `json:"incident_id"`
+	UserID           string  `json:"user_id"`
 	Summary          string  `json:"summary"`
 	Confidence       float64 `json:"confidence"`
 	Sentences        string  `json:"sentences"`
@@ -22,9 +23,9 @@ type Narrative struct {
 
 func (db *DB) CreateNarrative(n *Narrative) error {
 	result, err := db.conn.Exec(`
-		INSERT INTO narratives (incident_id, summary, confidence, sentences, model_used, temperature, tokens_used, generation_time_ms)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		n.IncidentID, n.Summary, n.Confidence, n.Sentences, n.ModelUsed, n.Temperature, n.TokensUsed, n.GenerationTimeMs)
+		INSERT INTO narratives (incident_id, user_id, summary, confidence, sentences, model_used, temperature, tokens_used, generation_time_ms)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		n.IncidentID, n.UserID, n.Summary, n.Confidence, n.Sentences, n.ModelUsed, n.Temperature, n.TokensUsed, n.GenerationTimeMs)
 	if err != nil {
 		return fmt.Errorf("insert narrative: %w", err)
 	}
@@ -41,8 +42,8 @@ func (db *DB) CreateNarrative(n *Narrative) error {
 func (db *DB) GetNarrativeByIncidentID(incidentID int64) (*Narrative, error) {
 	var n Narrative
 	err := db.conn.QueryRow(`
-		SELECT id, incident_id, summary, confidence, sentences, model_used, temperature, tokens_used, generation_time_ms, created_at, updated_at
-		FROM narratives WHERE incident_id = ?`, incidentID).Scan(&n.ID, &n.IncidentID, &n.Summary, &n.Confidence, &n.Sentences, &n.ModelUsed, &n.Temperature, &n.TokensUsed, &n.GenerationTimeMs, &n.CreatedAt, &n.UpdatedAt)
+		SELECT id, incident_id, user_id, summary, confidence, sentences, model_used, temperature, tokens_used, generation_time_ms, created_at, updated_at
+		FROM narratives WHERE incident_id = ?`, incidentID).Scan(&n.ID, &n.IncidentID, &n.UserID, &n.Summary, &n.Confidence, &n.Sentences, &n.ModelUsed, &n.Temperature, &n.TokensUsed, &n.GenerationTimeMs, &n.CreatedAt, &n.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -55,8 +56,8 @@ func (db *DB) GetNarrativeByIncidentID(incidentID int64) (*Narrative, error) {
 func (db *DB) GetNarrativeByID(id int64) (*Narrative, error) {
 	var n Narrative
 	err := db.conn.QueryRow(`
-		SELECT id, incident_id, summary, confidence, sentences, model_used, temperature, tokens_used, generation_time_ms, created_at, updated_at
-		FROM narratives WHERE id = ?`, id).Scan(&n.ID, &n.IncidentID, &n.Summary, &n.Confidence, &n.Sentences, &n.ModelUsed, &n.Temperature, &n.TokensUsed, &n.GenerationTimeMs, &n.CreatedAt, &n.UpdatedAt)
+		SELECT id, incident_id, user_id, summary, confidence, sentences, model_used, temperature, tokens_used, generation_time_ms, created_at, updated_at
+		FROM narratives WHERE id = ?`, id).Scan(&n.ID, &n.IncidentID, &n.UserID, &n.Summary, &n.Confidence, &n.Sentences, &n.ModelUsed, &n.Temperature, &n.TokensUsed, &n.GenerationTimeMs, &n.CreatedAt, &n.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -101,7 +102,7 @@ func (db *DB) GetNarrativeSourceEvents(narrativeID int64) ([]Event, error) {
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, timestamp, hostname, event_type, event_id, user_name, source_ip, dest_ip,
+		SELECT id, user_id, timestamp, hostname, event_type, event_id, user_name, source_ip, dest_ip,
 			process_name, command_line, parent_process, log_type, session_id, department,
 			location, device_type, success, port, protocol, file_path, severity, error, raw_json, created_at
 		FROM events WHERE id IN (%s)
@@ -117,7 +118,7 @@ func (db *DB) GetNarrativeSourceEvents(narrativeID int64) ([]Event, error) {
 	for rows.Next() {
 		var e Event
 		var rawJSON string
-		err := rows.Scan(&e.ID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
+		err := rows.Scan(&e.ID, &e.UserID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
 			&e.UserName, &e.SourceIP, &e.DestIP, &e.ProcessName, &e.CommandLine,
 			&e.ParentProcess, &e.LogType, &e.SessionID, &e.Department, &e.Location,
 			&e.DeviceType, &e.Success, &e.Port, &e.Protocol, &e.FilePath, &e.Severity,

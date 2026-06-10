@@ -48,8 +48,22 @@ func (db *DB) Close() error {
 
 func (db *DB) migrate() error {
 	schema := `
+	CREATE TABLE IF NOT EXISTS users (
+		id TEXT PRIMARY KEY,
+		email TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL,
+		api_key TEXT NOT NULL UNIQUE,
+		openrouter_key TEXT DEFAULT '',
+		created_at TEXT DEFAULT (datetime('now')),
+		updated_at TEXT DEFAULT (datetime('now'))
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+	CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
+
 	CREATE TABLE IF NOT EXISTS events (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id TEXT DEFAULT '',
 		timestamp TEXT NOT NULL,
 		hostname TEXT NOT NULL,
 		event_type TEXT NOT NULL,
@@ -76,6 +90,7 @@ func (db *DB) migrate() error {
 		UNIQUE(hostname, timestamp, event_type)
 	);
 
+	CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
 	CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
 	CREATE INDEX IF NOT EXISTS idx_events_hostname ON events(hostname);
 	CREATE INDEX IF NOT EXISTS idx_events_event_type ON events(event_type);
@@ -85,6 +100,7 @@ func (db *DB) migrate() error {
 
 	CREATE TABLE IF NOT EXISTS incidents (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id TEXT DEFAULT '',
 		title TEXT NOT NULL,
 		description TEXT,
 		source_ip TEXT NOT NULL,
@@ -104,6 +120,12 @@ func (db *DB) migrate() error {
 		created_at TEXT DEFAULT (datetime('now')),
 		updated_at TEXT DEFAULT (datetime('now'))
 	);
+
+	CREATE INDEX IF NOT EXISTS idx_incidents_user_id ON incidents(user_id);
+	CREATE INDEX IF NOT EXISTS idx_incidents_source_ip ON incidents(source_ip);
+	CREATE INDEX IF NOT EXISTS idx_incidents_start_time ON incidents(start_time);
+	CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+	CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
 
 	CREATE TABLE IF NOT EXISTS incident_events (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,16 +157,13 @@ func (db *DB) migrate() error {
 		FOREIGN KEY (technique_id) REFERENCES techniques(technique_id) ON DELETE CASCADE
 	);
 
-	CREATE INDEX IF NOT EXISTS idx_incidents_source_ip ON incidents(source_ip);
-	CREATE INDEX IF NOT EXISTS idx_incidents_start_time ON incidents(start_time);
-	CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
-	CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
 	CREATE INDEX IF NOT EXISTS idx_incident_events_incident ON incident_events(incident_id);
 	CREATE INDEX IF NOT EXISTS idx_incident_events_event ON incident_events(event_id);
 
 	CREATE TABLE IF NOT EXISTS narratives (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		incident_id INTEGER NOT NULL,
+		user_id TEXT DEFAULT '',
 		summary TEXT NOT NULL,
 		confidence REAL NOT NULL DEFAULT 0.0,
 		sentences TEXT NOT NULL,
@@ -158,6 +177,7 @@ func (db *DB) migrate() error {
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_narratives_incident ON narratives(incident_id);
+	CREATE INDEX IF NOT EXISTS idx_narratives_user_id ON narratives(user_id);
 
 	CREATE TABLE IF NOT EXISTS feedback (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -176,7 +196,27 @@ func (db *DB) migrate() error {
 	`
 
 	_, err := db.conn.Exec(schema)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Create demo user for backward compatibility with existing data
+	var count int
+	db.conn.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	if count == 0 {
+		_, err = db.conn.Exec(`
+			INSERT INTO users (id, email, password_hash, api_key, created_at, updated_at)
+			VALUES ('demo', 'demo@narrator.ai', '', 'nai_demo_key_12345', datetime('now'), datetime('now'))`)
+		if err != nil {
+			return fmt.Errorf("create demo user: %w", err)
+		}
+		// Assign all existing data to demo user
+		db.conn.Exec("UPDATE events SET user_id = 'demo' WHERE user_id = '' OR user_id IS NULL")
+		db.conn.Exec("UPDATE incidents SET user_id = 'demo' WHERE user_id = '' OR user_id IS NULL")
+		db.conn.Exec("UPDATE narratives SET user_id = 'demo' WHERE user_id = '' OR user_id IS NULL")
+	}
+
+	return nil
 }
 
 func (db *DB) HealthCheck() error {

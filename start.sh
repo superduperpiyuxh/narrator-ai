@@ -9,6 +9,7 @@ sleep 1
 # Set environment
 export DATA_DIR="$(dirname "$0")/data/sample_json_20260301"
 export PORT=8080
+export JWT_SECRET="${JWT_SECRET:-narrator-ai-jwt-secret-$(date +%s)}"
 # Set OPENROUTER_API_KEY env var before running: export OPENROUTER_API_KEY=sk-or-v1-...
 
 # Start in background with nohup

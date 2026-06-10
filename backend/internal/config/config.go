@@ -7,6 +7,7 @@ type Config struct {
 	DatabasePath string
 	DataDir      string
 	OpenRouterKey string
+	JWTSecret    string
 }
 
 func Load() *Config {
@@ -15,6 +16,7 @@ func Load() *Config {
 		DatabasePath:  getEnv("DATABASE_PATH", "./narratorai.db"),
 		DataDir:       getEnv("DATA_DIR", "../data/sample_json_20260301"),
 		OpenRouterKey: getEnv("OPENROUTER_API_KEY", ""),
+		JWTSecret:     getEnv("JWT_SECRET", "narrator-ai-jwt-secret-change-in-production"),
 	}
 }
 

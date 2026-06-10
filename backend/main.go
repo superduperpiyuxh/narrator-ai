@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/superduperpiyuxh/narrator-ai/backend/internal/auth"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/config"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/handler"
@@ -25,43 +26,63 @@ func main() {
 	}
 	defer db.Close()
 
+	authSvc := auth.NewService(db.Conn(), cfg.JWTSecret)
+	authH := handler.NewAuthHandler(authSvc)
+
 	h := handler.New(db, cfg.DataDir)
 	ih := handler.NewIncidentHandler(db)
 	nh := handler.NewNarrativeHandler(db, cfg.OpenRouterKey)
 	fh := handler.NewFeedbackHandler(db)
+	ingestH := handler.NewIngestHandler(db)
 
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-API-Key"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// Public routes
 	r.GET("/health", h.Health)
-	r.GET("/api/events", h.GetEvents)
-	r.GET("/api/events/search", h.SearchEvents)
-	r.GET("/api/events/host/:hostname", h.GetEventsByHost)
-	r.GET("/api/events/type/:eventType", h.GetEventsByType)
-	r.GET("/api/stats", h.GetStats)
-	r.POST("/api/import", h.ImportLocal)
+	r.POST("/api/auth/signup", authH.Signup)
+	r.POST("/api/auth/login", authH.Login)
 
-	r.POST("/api/incidents/group", ih.GroupIncidents)
-	r.GET("/api/incidents", ih.GetIncidents)
-	r.GET("/api/incidents/:id", ih.GetIncident)
-	r.GET("/api/incidents/:id/events", ih.GetIncidentEvents)
-	r.GET("/api/incidents/stats", ih.GetIncidentStats)
-	r.GET("/api/techniques", ih.GetTechniques)
+	// Protected routes
+	protected := r.Group("")
+	protected.Use(auth.AuthMiddleware(authSvc))
+	{
+		protected.GET("/api/auth/me", authH.Me)
+		protected.GET("/api/auth/settings", authH.GetSettings)
+		protected.PUT("/api/auth/settings", authH.UpdateSettings)
 
-	r.POST("/api/incidents/:id/narrative", nh.GenerateNarrative)
-	r.GET("/api/incidents/:id/narrative", nh.GetNarrative)
-	r.GET("/api/narratives/:id", nh.GetNarrativeSourceEvents)
+		protected.GET("/api/events", h.GetEvents)
+		protected.GET("/api/events/search", h.SearchEvents)
+		protected.GET("/api/events/host/:hostname", h.GetEventsByHost)
+		protected.GET("/api/events/type/:eventType", h.GetEventsByType)
+		protected.GET("/api/stats", h.GetStats)
+		protected.POST("/api/import", h.ImportLocal)
 
-	r.POST("/api/feedback", fh.SubmitFeedback)
-	r.GET("/api/feedback/:narrative_id", fh.GetFeedback)
+		protected.POST("/api/incidents/group", ih.GroupIncidents)
+		protected.GET("/api/incidents", ih.GetIncidents)
+		protected.GET("/api/incidents/:id", ih.GetIncident)
+		protected.GET("/api/incidents/:id/events", ih.GetIncidentEvents)
+		protected.GET("/api/incidents/stats", ih.GetIncidentStats)
+		protected.GET("/api/techniques", ih.GetTechniques)
+
+		protected.POST("/api/incidents/:id/narrative", nh.GenerateNarrative)
+		protected.GET("/api/incidents/:id/narrative", nh.GetNarrative)
+		protected.GET("/api/narratives/:id", nh.GetNarrativeSourceEvents)
+
+		protected.POST("/api/feedback", fh.SubmitFeedback)
+		protected.GET("/api/feedback/:narrative_id", fh.GetFeedback)
+
+		protected.POST("/api/v1/ingest", ingestH.IngestEvents)
+		protected.POST("/api/v1/ingest/file", ingestH.IngestFile)
+	}
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

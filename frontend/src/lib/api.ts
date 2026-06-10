@@ -17,13 +17,24 @@ import type {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('nexus_token');
+}
+
 async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE}${url}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
@@ -32,6 +43,48 @@ async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
   }
 
   return res.json();
+}
+
+// Auth
+export async function signup(email: string, password: string) {
+  return fetchAPI<{ token: string; user: { id: string; email: string; api_key: string } }>(
+    '/api/auth/signup',
+    { method: 'POST', body: JSON.stringify({ email, password }) }
+  );
+}
+
+export async function login(email: string, password: string) {
+  return fetchAPI<{ token: string; user: { id: string; email: string; api_key: string } }>(
+    '/api/auth/login',
+    { method: 'POST', body: JSON.stringify({ email, password }) }
+  );
+}
+
+export async function getMe() {
+  return fetchAPI<{ user: { id: string; email: string; api_key: string } }>('/api/auth/me');
+}
+
+export async function getSettings() {
+  return fetchAPI<{ openrouter_key: string; api_key: string }>('/api/auth/settings');
+}
+
+export async function updateSettings(openrouter_key: string) {
+  return fetchAPI<{ message: string }>('/api/auth/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ openrouter_key }),
+  });
+}
+
+export function setToken(token: string) {
+  localStorage.setItem('nexus_token', token);
+}
+
+export function clearToken() {
+  localStorage.removeItem('nexus_token');
+}
+
+export function isAuthenticated(): boolean {
+  return !!getToken();
 }
 
 // Incidents

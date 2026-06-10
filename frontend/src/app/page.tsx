@@ -1,38 +1,82 @@
-import { fetchIncidents, fetchIncidentStats } from '@/lib/api';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { isAuthenticated, clearToken } from '@/lib/api';
 import { IncidentCard } from '@/components/IncidentCard';
 import { DashboardControls } from '@/components/DashboardControls';
 import { Shield } from 'lucide-react';
+import type { Incident, IncidentStats } from '@/lib/types';
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const page = Number(params.page) || 1;
-  const severity = typeof params.severity === 'string' ? params.severity : '';
-  const status = typeof params.status === 'string' ? params.status : '';
-  const sourceIP = typeof params.source_ip === 'string' ? params.source_ip : '';
+export default function HomePage() {
+  const router = useRouter();
+  const [checked, setChecked] = useState(false);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<IncidentStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [severity, setSeverity] = useState('');
+  const [status, setStatus] = useState('');
+  const [sourceIP, setSourceIP] = useState('');
   const limit = 24;
-  const offset = (page - 1) * limit;
 
-  let incidents: Awaited<ReturnType<typeof fetchIncidents>>['incidents'] = [];
-  let total = 0;
-  let stats: Awaited<ReturnType<typeof fetchIncidentStats>> | null = null;
-  let error: string | null = null;
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
+    setChecked(true);
+  }, [router]);
 
-  try {
-    const data = await fetchIncidents(limit, offset, severity || undefined, status || undefined, sourceIP || undefined);
-    incidents = data.incidents || [];
-    total = data.total;
-  } catch (e) {
-    error = e instanceof Error ? e.message : 'Failed to load incidents';
-  }
+  useEffect(() => {
+    if (!checked) return;
 
-  try {
-    stats = await fetchIncidentStats();
-  } catch {
-    // Stats are optional
+    const loadData = async () => {
+      try {
+        const API_BASE = 'http://localhost:8080';
+        const token = localStorage.getItem('nexus_token');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const params = new URLSearchParams();
+        params.set('limit', String(limit));
+        params.set('offset', String((page - 1) * limit));
+        if (severity) params.set('severity', severity);
+        if (status) params.set('status', status);
+        if (sourceIP) params.set('source_ip', sourceIP);
+
+        const incRes = await fetch(`${API_BASE}/api/incidents?${params.toString()}`, { headers });
+        if (incRes.ok) {
+          const data = await incRes.json();
+          setIncidents(data.incidents || []);
+          setTotal(data.total);
+        }
+
+        const statsRes = await fetch(`${API_BASE}/api/incidents/stats`, { headers });
+        if (statsRes.ok) {
+          setStats(await statsRes.json());
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load');
+      }
+    };
+    loadData();
+  }, [checked, page, severity, status, sourceIP]);
+
+  const handleLogout = () => {
+    clearToken();
+    localStorage.removeItem('nexus_user');
+    router.push('/login');
+  };
+
+  if (!checked) {
+    return (
+      <main className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-gray-400" role="status">Loading...</div>
+      </main>
+    );
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -40,16 +84,32 @@ export default async function HomePage({
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
       <div className="max-w-7xl mx-auto" id="main-content">
-        {/* Header */}
         <header className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-blue-500" aria-hidden="true" />
-            <h1 className="text-3xl font-bold text-zinc-100">Nexus</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shield className="w-8 h-8 text-blue-500" aria-hidden="true" />
+              <div>
+                <h1 className="text-3xl font-bold text-zinc-100">Nexus</h1>
+                <p className="text-zinc-400">Security Incident Dashboard</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/settings"
+                className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
+              >
+                Settings
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
-          <p className="text-zinc-400">Security Incident Dashboard</p>
         </header>
 
-        {/* Stats bar */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" role="region" aria-label="Incident statistics">
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
@@ -85,17 +145,12 @@ export default async function HomePage({
           </div>
         )}
 
-        {/* Error state */}
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6" role="alert">
             <p className="text-red-400">Failed to load incidents: {error}</p>
-            <p className="text-sm text-zinc-500 mt-2">
-              Make sure the backend is running on port 8080
-            </p>
           </div>
         )}
 
-        {/* Search and Filters */}
         <DashboardControls
           currentPage={page}
           totalPages={totalPages}
@@ -105,7 +160,6 @@ export default async function HomePage({
           currentSourceIP={sourceIP}
         />
 
-        {/* Incidents grid */}
         {incidents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Incidents">
             {incidents.map((incident) => (
@@ -115,43 +169,35 @@ export default async function HomePage({
         ) : (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
             <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
-            <h2 className="text-lg font-medium text-zinc-300 mb-2">
-              No incidents found
-            </h2>
+            <h2 className="text-lg font-medium text-zinc-300 mb-2">No incidents found</h2>
             <p className="text-zinc-500 mb-4">
               {severity || status || sourceIP
                 ? 'Try adjusting your filters.'
                 : 'Import data from the backend to get started.'}
             </p>
-            {!severity && !status && !sourceIP && (
-              <code className="text-xs text-zinc-600 bg-zinc-800 px-3 py-1 rounded">
-                curl -X POST http://localhost:8080/api/import
-              </code>
-            )}
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <nav className="flex items-center justify-center gap-2 mt-8" aria-label="Pagination">
             {page > 1 && (
-              <a
-                href={`/?page=${page - 1}${severity ? `&severity=${severity}` : ''}${status ? `&status=${status}` : ''}${sourceIP ? `&source_ip=${sourceIP}` : ''}`}
+              <button
+                onClick={() => setPage(page - 1)}
                 className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
               >
                 Previous
-              </a>
+              </button>
             )}
             <span className="text-sm text-zinc-500 px-4">
               Page {page} of {totalPages} ({total.toLocaleString()} incidents)
             </span>
             {page < totalPages && (
-              <a
-                href={`/?page=${page + 1}${severity ? `&severity=${severity}` : ''}${status ? `&status=${status}` : ''}${sourceIP ? `&source_ip=${sourceIP}` : ''}`}
+              <button
+                onClick={() => setPage(page + 1)}
                 className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
               >
                 Next
-              </a>
+              </button>
             )}
           </nav>
         )}

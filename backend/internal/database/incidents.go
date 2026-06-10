@@ -9,6 +9,7 @@ import (
 
 type Incident struct {
 	ID              int64          `json:"id"`
+	UserID          string         `json:"user_id"`
 	Title           string         `json:"title"`
 	Description     string         `json:"description"`
 	SourceIP        string         `json:"source_ip"`
@@ -121,7 +122,7 @@ func (db *DB) GetIncidents(limit, offset int, severity, status, sourceIP string)
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, title, description, source_ip, start_time, end_time, event_count,
+		SELECT id, user_id, title, description, source_ip, start_time, end_time, event_count,
 			unique_users, unique_ips, unique_hostnames, severity, status, techniques,
 			tactics, mitre_attack_ids, confidence, raw_summary, created_at, updated_at
 		FROM incidents %s
@@ -139,7 +140,71 @@ func (db *DB) GetIncidents(limit, offset int, severity, status, sourceIP string)
 	for rows.Next() {
 		var inc Incident
 		var usersJSON, ipsJSON, hostnamesJSON, techniquesJSON, tacticsJSON, mitreJSON string
-		err := rows.Scan(&inc.ID, &inc.Title, &inc.Description, &inc.SourceIP, &inc.StartTime,
+		err := rows.Scan(&inc.ID, &inc.UserID, &inc.Title, &inc.Description, &inc.SourceIP, &inc.StartTime,
+			&inc.EndTime, &inc.EventCount, &usersJSON, &ipsJSON, &hostnamesJSON, &inc.Severity,
+			&inc.Status, &techniquesJSON, &tacticsJSON, &mitreJSON, &inc.Confidence,
+			&inc.RawSummary, &inc.CreatedAt, &inc.UpdatedAt)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scan incident: %w", err)
+		}
+		json.Unmarshal([]byte(usersJSON), &inc.UniqueUsers)
+		json.Unmarshal([]byte(ipsJSON), &inc.UniqueIPs)
+		json.Unmarshal([]byte(hostnamesJSON), &inc.UniqueHostnames)
+		json.Unmarshal([]byte(techniquesJSON), &inc.Techniques)
+		json.Unmarshal([]byte(tacticsJSON), &inc.Tactics)
+		json.Unmarshal([]byte(mitreJSON), &inc.MitreAttackIDs)
+		incidents = append(incidents, inc)
+	}
+
+	return incidents, total, nil
+}
+
+func (db *DB) GetIncidentsByUserID(userID string, limit, offset int, severity, status, sourceIP string) ([]Incident, int, error) {
+	where := []string{"user_id = ?"}
+	args := []interface{}{userID}
+
+	if severity != "" {
+		where = append(where, "severity = ?")
+		args = append(args, severity)
+	}
+	if status != "" {
+		where = append(where, "status = ?")
+		args = append(args, status)
+	}
+	if sourceIP != "" {
+		where = append(where, "source_ip = ?")
+		args = append(args, sourceIP)
+	}
+
+	whereClause := "WHERE " + strings.Join(where, " AND ")
+
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM incidents %s", whereClause)
+	err := db.conn.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count incidents: %w", err)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, user_id, title, description, source_ip, start_time, end_time, event_count,
+			unique_users, unique_ips, unique_hostnames, severity, status, techniques,
+			tactics, mitre_attack_ids, confidence, raw_summary, created_at, updated_at
+		FROM incidents %s
+		ORDER BY start_time DESC
+		LIMIT ? OFFSET ?`, whereClause)
+
+	args = append(args, limit, offset)
+	rows, err := db.conn.Query(query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("query incidents: %w", err)
+	}
+	defer rows.Close()
+
+	var incidents []Incident
+	for rows.Next() {
+		var inc Incident
+		var usersJSON, ipsJSON, hostnamesJSON, techniquesJSON, tacticsJSON, mitreJSON string
+		err := rows.Scan(&inc.ID, &inc.UserID, &inc.Title, &inc.Description, &inc.SourceIP, &inc.StartTime,
 			&inc.EndTime, &inc.EventCount, &usersJSON, &ipsJSON, &hostnamesJSON, &inc.Severity,
 			&inc.Status, &techniquesJSON, &tacticsJSON, &mitreJSON, &inc.Confidence,
 			&inc.RawSummary, &inc.CreatedAt, &inc.UpdatedAt)
@@ -163,10 +228,10 @@ func (db *DB) GetIncidentByID(id int64) (*Incident, error) {
 	var usersJSON, ipsJSON, hostnamesJSON, techniquesJSON, tacticsJSON, mitreJSON string
 
 	err := db.conn.QueryRow(`
-		SELECT id, title, description, source_ip, start_time, end_time, event_count,
+		SELECT id, user_id, title, description, source_ip, start_time, end_time, event_count,
 			unique_users, unique_ips, unique_hostnames, severity, status, techniques,
 			tactics, mitre_attack_ids, confidence, raw_summary, created_at, updated_at
-		FROM incidents WHERE id = ?`, id).Scan(&inc.ID, &inc.Title, &inc.Description,
+		FROM incidents WHERE id = ?`, id).Scan(&inc.ID, &inc.UserID, &inc.Title, &inc.Description,
 		&inc.SourceIP, &inc.StartTime, &inc.EndTime, &inc.EventCount, &usersJSON,
 		&ipsJSON, &hostnamesJSON, &inc.Severity, &inc.Status, &techniquesJSON,
 		&tacticsJSON, &mitreJSON, &inc.Confidence, &inc.RawSummary, &inc.CreatedAt, &inc.UpdatedAt)
@@ -189,7 +254,7 @@ func (db *DB) GetIncidentByID(id int64) (*Incident, error) {
 
 func (db *DB) GetIncidentEvents(incidentID int64) ([]Event, error) {
 	rows, err := db.conn.Query(`
-		SELECT e.id, e.timestamp, e.hostname, e.event_type, e.event_id, e.user_name,
+		SELECT e.id, e.user_id, e.timestamp, e.hostname, e.event_type, e.event_id, e.user_name,
 			e.source_ip, e.dest_ip, e.process_name, e.command_line, e.parent_process,
 			e.log_type, e.session_id, e.department, e.location, e.device_type, e.success,
 			e.port, e.protocol, e.file_path, e.severity, e.error, e.raw_json, e.created_at
@@ -206,7 +271,7 @@ func (db *DB) GetIncidentEvents(incidentID int64) ([]Event, error) {
 	for rows.Next() {
 		var e Event
 		var rawJSON string
-		err := rows.Scan(&e.ID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
+		err := rows.Scan(&e.ID, &e.UserID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
 			&e.UserName, &e.SourceIP, &e.DestIP, &e.ProcessName, &e.CommandLine,
 			&e.ParentProcess, &e.LogType, &e.SessionID, &e.Department, &e.Location,
 			&e.DeviceType, &e.Success, &e.Port, &e.Protocol, &e.FilePath, &e.Severity,
@@ -256,7 +321,7 @@ func (db *DB) GetIncidentStats() (map[string]interface{}, error) {
 
 func (db *DB) GetUnprocessedEvents() ([]Event, error) {
 	rows, err := db.conn.Query(`
-		SELECT e.id, e.timestamp, e.hostname, e.event_type, e.event_id, e.user_name,
+		SELECT e.id, e.user_id, e.timestamp, e.hostname, e.event_type, e.event_id, e.user_name,
 			e.source_ip, e.dest_ip, e.process_name, e.command_line, e.parent_process,
 			e.log_type, e.session_id, e.department, e.location, e.device_type, e.success,
 			e.port, e.protocol, e.file_path, e.severity, e.error, e.raw_json, e.created_at
@@ -273,7 +338,7 @@ func (db *DB) GetUnprocessedEvents() ([]Event, error) {
 	for rows.Next() {
 		var e Event
 		var rawJSON string
-		err := rows.Scan(&e.ID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
+		err := rows.Scan(&e.ID, &e.UserID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
 			&e.UserName, &e.SourceIP, &e.DestIP, &e.ProcessName, &e.CommandLine,
 			&e.ParentProcess, &e.LogType, &e.SessionID, &e.Department, &e.Location,
 			&e.DeviceType, &e.Success, &e.Port, &e.Protocol, &e.FilePath, &e.Severity,
