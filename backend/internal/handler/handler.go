@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/superduperpiyuxh/narrator-ai/backend/internal/auth"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/normalizer"
 )
@@ -38,7 +39,8 @@ func (h *Handler) GetEvents(c *gin.Context) {
 		offset = 0
 	}
 
-	events, total, err := h.db.GetEvents(limit, offset)
+	userID := auth.GetUserID(c)
+	events, total, err := h.db.GetEventsByUserID(userID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -63,7 +65,8 @@ func (h *Handler) SearchEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := h.db.SearchEvents(query)
+	userID := auth.GetUserID(c)
+	events, err := h.db.SearchEventsByUserID(userID, query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -103,7 +106,8 @@ func (h *Handler) GetEventsByType(c *gin.Context) {
 }
 
 func (h *Handler) GetStats(c *gin.Context) {
-	stats, err := h.db.GetStats()
+	userID := auth.GetUserID(c)
+	stats, err := h.db.GetStatsByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

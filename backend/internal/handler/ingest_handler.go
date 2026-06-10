@@ -15,11 +15,12 @@ import (
 )
 
 type IngestHandler struct {
-	db *database.DB
+	db      *database.DB
+	dataDir string
 }
 
-func NewIngestHandler(db *database.DB) *IngestHandler {
-	return &IngestHandler{db: db}
+func NewIngestHandler(db *database.DB, dataDir string) *IngestHandler {
+	return &IngestHandler{db: db, dataDir: dataDir}
 }
 
 type IngestEvent struct {
@@ -56,7 +57,16 @@ type IngestFileRequest struct {
 }
 
 func (h *IngestHandler) IngestEvents(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var req IngestRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,7 +144,7 @@ func (h *IngestHandler) IngestEvents(c *gin.Context) {
 		n := normalizer.NormalizeEvent(e)
 
 		batch = append(batch, database.Event{
-			UserID:        userID.(string),
+			UserID:        userIDStr,
 			Timestamp:     n.Timestamp,
 			Hostname:      n.Hostname,
 			EventType:     n.EventType,
@@ -172,7 +182,16 @@ func (h *IngestHandler) IngestEvents(c *gin.Context) {
 }
 
 func (h *IngestHandler) IngestFile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var req IngestFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -182,8 +201,10 @@ func (h *IngestHandler) IngestFile(c *gin.Context) {
 
 	// Sanitize path
 	absPath := filepath.Clean(req.FilePath)
-	if !strings.HasPrefix(absPath, "/") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file_path must be absolute"})
+	// Ensure file is within allowed directory
+	allowedDir := filepath.Clean(h.dataDir)
+	if !strings.HasPrefix(absPath, allowedDir) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file_path must be within data directory"})
 		return
 	}
 
@@ -247,7 +268,7 @@ func (h *IngestHandler) IngestFile(c *gin.Context) {
 
 		n := normalizer.NormalizeEvent(e)
 		batch = append(batch, database.Event{
-			UserID:        userID.(string),
+			UserID:        userIDStr,
 			Timestamp:     n.Timestamp,
 			Hostname:      n.Hostname,
 			EventType:     n.EventType,

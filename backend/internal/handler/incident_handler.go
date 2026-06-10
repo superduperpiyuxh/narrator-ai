@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/attck"
+	"github.com/superduperpiyuxh/narrator-ai/backend/internal/auth"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/incident"
 )
@@ -72,7 +73,8 @@ func (h *IncidentHandler) GetIncidents(c *gin.Context) {
 	status := c.Query("status")
 	sourceIP := c.Query("source_ip")
 
-	incidents, total, err := h.db.GetIncidents(limit, offset, severity, status, sourceIP)
+	userID := auth.GetUserID(c)
+	incidents, total, err := h.db.GetIncidentsByUserID(userID, limit, offset, severity, status, sourceIP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -103,6 +105,13 @@ func (h *IncidentHandler) GetIncident(c *gin.Context) {
 		return
 	}
 
+	// Check ownership
+	userID := auth.GetUserID(c)
+	if inc.UserID != "" && inc.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"incident": inc})
 }
 
@@ -123,6 +132,13 @@ func (h *IncidentHandler) GetIncidentEvents(c *gin.Context) {
 		return
 	}
 
+	// Check ownership
+	userID := auth.GetUserID(c)
+	if inc.UserID != "" && inc.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
 	events, err := h.db.GetIncidentEvents(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -137,7 +153,8 @@ func (h *IncidentHandler) GetIncidentEvents(c *gin.Context) {
 }
 
 func (h *IncidentHandler) GetIncidentStats(c *gin.Context) {
-	stats, err := h.db.GetIncidentStats()
+	userID := auth.GetUserID(c)
+	stats, err := h.db.GetIncidentStatsByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

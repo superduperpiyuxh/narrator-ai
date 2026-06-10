@@ -79,7 +79,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) Me(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 	user, err := h.svc.GetUserByID(userID.(string))
 	if err != nil || user == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
@@ -90,7 +94,11 @@ func (h *AuthHandler) Me(c *gin.Context) {
 }
 
 func (h *AuthHandler) UpdateSettings(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var req UpdateKeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -107,7 +115,11 @@ func (h *AuthHandler) UpdateSettings(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetSettings(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 	user, err := h.svc.GetUserByID(userID.(string))
 	if err != nil || user == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})

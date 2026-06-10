@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"log"
 	"net/http"
 	"os"
@@ -27,14 +29,17 @@ func main() {
 	defer db.Close()
 
 	authSvc := auth.NewService(db.Conn(), cfg.JWTSecret)
-	authSvc.CreateDefaultAdmin("admin@nexus.ai", "admin12345")
+	adminPass := generateRandomPassword(16)
+	if err := authSvc.CreateDefaultAdmin("admin@nexus.ai", adminPass); err == nil {
+		log.Printf("Created default admin: admin@nexus.ai / %s", adminPass)
+	}
 	authH := handler.NewAuthHandler(authSvc)
 
 	h := handler.New(db, cfg.DataDir)
 	ih := handler.NewIncidentHandler(db)
-	nh := handler.NewNarrativeHandler(db, cfg.OpenRouterKey)
+	nh := handler.NewNarrativeHandler(db, authSvc, cfg.OpenRouterKey)
 	fh := handler.NewFeedbackHandler(db)
-	ingestH := handler.NewIngestHandler(db)
+	ingestH := handler.NewIngestHandler(db, cfg.DataDir)
 
 	r := gin.Default()
 
@@ -112,4 +117,12 @@ func main() {
 	}
 
 	log.Println("Server exited")
+}
+
+func generateRandomPassword(length int) string {
+	b := make([]byte, length)
+	if _, err := rand.Read(b); err != nil {
+		log.Fatalf("failed to generate random password: %v", err)
+	}
+	return hex.EncodeToString(b)[:length]
 }

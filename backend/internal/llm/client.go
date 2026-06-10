@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync/atomic"
 	"time"
 )
 
 type Client struct {
 	apiKey     string
 	httpClient *http.Client
-	modelIndex int
+	modelIndex int64
 	models     []string
 }
 
@@ -56,9 +57,8 @@ func NewClient(apiKey string) *Client {
 }
 
 func (c *Client) nextModel() string {
-	model := c.models[c.modelIndex%len(c.models)]
-	c.modelIndex++
-	return model
+	idx := atomic.AddInt64(&c.modelIndex, 1) - 1
+	return c.models[idx%int64(len(c.models))]
 }
 
 func (c *Client) Chat(messages []Message, temperature float64, maxTokens int) (string, int, error) {

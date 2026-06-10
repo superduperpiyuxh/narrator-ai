@@ -18,7 +18,7 @@ export function FeedbackForm({ narrativeId, incidentId, existingFeedback }: Feed
     existingFeedback ? (existingFeedback.rating === 1 ? 'up' : 'down') : null
   );
   const [notes, setNotes] = useState(existingFeedback?.notes || '');
-  const { submitFeedback, isSubmitting } = useFeedback(narrativeId);
+  const { submitFeedback, isSubmitting } = useFeedback(narrativeId, incidentId);
 
   const handleSubmit = async () => {
     if (!rating) return;

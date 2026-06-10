@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/superduperpiyuxh/narrator-ai/backend/internal/auth"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/llm"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/narrative"
@@ -15,11 +16,12 @@ import (
 
 type NarrativeHandler struct {
 	db      *database.DB
+	authSvc *auth.Service
 	llmKey  string
 }
 
-func NewNarrativeHandler(db *database.DB, llmKey string) *NarrativeHandler {
-	return &NarrativeHandler{db: db, llmKey: llmKey}
+func NewNarrativeHandler(db *database.DB, authSvc *auth.Service, llmKey string) *NarrativeHandler {
+	return &NarrativeHandler{db: db, authSvc: authSvc, llmKey: llmKey}
 }
 
 func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
@@ -61,7 +63,13 @@ func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
 		return
 	}
 
-	llmClient := llm.NewClient(h.llmKey)
+	// Use user's OpenRouter key if available, fall back to global
+	userID := auth.GetUserID(c)
+	llmKey := h.llmKey
+	if user, _ := h.authSvc.GetUserByID(userID); user != nil && user.OpenRouterKey != "" {
+		llmKey = user.OpenRouterKey
+	}
+	llmClient := llm.NewClient(llmKey)
 	gen := narrative.NewGenerator(llmClient)
 
 	start := time.Now()
@@ -77,6 +85,7 @@ func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
 
 	dbNarr := &database.Narrative{
 		IncidentID:       id,
+		UserID:           userID,
 		Summary:          narr.Summary,
 		Confidence:       narr.Confidence,
 		Sentences:        string(sentencesJSON),
@@ -106,6 +115,22 @@ func (h *NarrativeHandler) GetNarrative(c *gin.Context) {
 		return
 	}
 
+	// Check incident ownership
+	inc, err := h.db.GetIncidentByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if inc == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "incident not found"})
+		return
+	}
+	userID := auth.GetUserID(c)
+	if inc.UserID != "" && inc.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
 	narr, err := h.db.GetNarrativeByIncidentID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -124,6 +149,29 @@ func (h *NarrativeHandler) GetNarrativeSourceEvents(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid narrative id"})
 		return
+	}
+
+	// Check narrative ownership through incident
+	narr, err := h.db.GetNarrativeByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if narr == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "narrative not found"})
+		return
+	}
+	inc, err := h.db.GetIncidentByID(narr.IncidentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if inc != nil {
+		userID := auth.GetUserID(c)
+		if inc.UserID != "" && inc.UserID != userID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+			return
+		}
 	}
 
 	events, err := h.db.GetNarrativeSourceEvents(id)

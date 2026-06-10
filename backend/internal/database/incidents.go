@@ -319,6 +319,37 @@ func (db *DB) GetIncidentStats() (map[string]interface{}, error) {
 	return stats, nil
 }
 
+func (db *DB) GetIncidentStatsByUserID(userID string) (map[string]interface{}, error) {
+	stats := map[string]interface{}{}
+
+	var total int
+	err := db.conn.QueryRow("SELECT COUNT(*) FROM incidents WHERE user_id = ?", userID).Scan(&total)
+	if err != nil {
+		return nil, err
+	}
+	stats["total_incidents"] = total
+
+	rows, err := db.conn.Query("SELECT severity, COUNT(*) FROM incidents WHERE user_id = ? GROUP BY severity", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	bySeverity := map[string]int{}
+	for rows.Next() {
+		var sev string
+		var count int
+		rows.Scan(&sev, &count)
+		bySeverity[sev] = count
+	}
+	stats["by_severity"] = bySeverity
+
+	var avgEvents float64
+	db.conn.QueryRow("SELECT COALESCE(AVG(event_count), 0) FROM incidents WHERE user_id = ?", userID).Scan(&avgEvents)
+	stats["avg_events_per_incident"] = avgEvents
+
+	return stats, nil
+}
+
 func (db *DB) GetUnprocessedEvents() ([]Event, error) {
 	rows, err := db.conn.Query(`
 		SELECT e.id, e.user_id, e.timestamp, e.hostname, e.event_type, e.event_id, e.user_name,

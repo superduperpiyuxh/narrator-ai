@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { Feedback } from '@/lib/types';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 function getAuthHeaders() {
   const token = localStorage.getItem('nexus_token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -13,11 +15,11 @@ function getAuthHeaders() {
 
 const fetcher = (url: string) => fetch(url, { headers: getAuthHeaders() }).then((res) => res.json());
 
-export function useFeedback(narrativeId: number) {
+export function useFeedback(narrativeId: number, incidentId?: number) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data, mutate } = useSWR<{ feedback: Feedback | null }>(
-    `/api/feedback/${narrativeId}`,
+    `${API_BASE}/api/feedback/${narrativeId}`,
     fetcher
   );
 
@@ -25,12 +27,12 @@ export function useFeedback(narrativeId: number) {
     async (rating: 'up' | 'down', notes: string = '') => {
       setIsSubmitting(true);
       try {
-        const res = await fetch('/api/feedback', {
+        const res = await fetch(`${API_BASE}/api/feedback`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({
             narrative_id: narrativeId,
-            incident_id: 0,
+            incident_id: incidentId || 0,
             rating: rating === 'up' ? 1 : -1,
             notes,
           }),
@@ -47,7 +49,7 @@ export function useFeedback(narrativeId: number) {
         setIsSubmitting(false);
       }
     },
-    [narrativeId, mutate]
+    [narrativeId, incidentId, mutate]
   );
 
   return {

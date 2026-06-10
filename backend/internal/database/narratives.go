@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type Narrative struct {
@@ -106,7 +107,7 @@ func (db *DB) GetNarrativeSourceEvents(narrativeID int64) ([]Event, error) {
 			process_name, command_line, parent_process, log_type, session_id, department,
 			location, device_type, success, port, protocol, file_path, severity, error, raw_json, created_at
 		FROM events WHERE id IN (%s)
-		ORDER BY timestamp ASC`, fmt.Sprintf("%v", placeholders)[1:len(placeholders)*2-1])
+		ORDER BY timestamp ASC`, strings.Join(placeholders, ","))
 
 	rows, err := db.conn.Query(query, ids...)
 	if err != nil {

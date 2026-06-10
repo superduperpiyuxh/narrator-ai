@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { isAuthenticated, clearToken } from '@/lib/api';
+import { API_BASE, isAuthenticated, clearToken } from '@/lib/api';
 import { IncidentCard } from '@/components/IncidentCard';
 import { DashboardControls } from '@/components/DashboardControls';
 import { Shield } from 'lucide-react';
 import type { Incident, IncidentStats } from '@/lib/types';
-
-const API_BASE = 'http://localhost:8080';
 
 function getHeaders() {
   const token = localStorage.getItem('nexus_token');

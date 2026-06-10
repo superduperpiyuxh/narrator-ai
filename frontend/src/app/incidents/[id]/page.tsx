@@ -8,9 +8,8 @@ import { SeverityBadge } from '@/components/SeverityBadge';
 import { TechniqueBadge } from '@/components/TechniqueBadge';
 import { GenerateNarrativeButton } from '@/components/GenerateNarrativeButton';
 import { ArrowLeft, Shield } from 'lucide-react';
+import { API_BASE } from '@/lib/api';
 import type { Incident, Narrative, Feedback } from '@/lib/types';
-
-const API_BASE = 'http://localhost:8080';
 
 function getHeaders() {
   const token = localStorage.getItem('nexus_token');
