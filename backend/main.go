@@ -27,6 +27,7 @@ func main() {
 	defer db.Close()
 
 	authSvc := auth.NewService(db.Conn(), cfg.JWTSecret)
+	authSvc.CreateDefaultAdmin("admin@nexus.ai", "admin12345")
 	authH := handler.NewAuthHandler(authSvc)
 
 	h := handler.New(db, cfg.DataDir)

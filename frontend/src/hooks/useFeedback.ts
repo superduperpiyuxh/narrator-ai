@@ -4,7 +4,14 @@ import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { Feedback } from '@/lib/types';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+function getAuthHeaders() {
+  const token = localStorage.getItem('nexus_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
+const fetcher = (url: string) => fetch(url, { headers: getAuthHeaders() }).then((res) => res.json());
 
 export function useFeedback(narrativeId: number) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,10 +27,10 @@ export function useFeedback(narrativeId: number) {
       try {
         const res = await fetch('/api/feedback', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             narrative_id: narrativeId,
-            incident_id: 0, // Will be set by parent component
+            incident_id: 0,
             rating: rating === 'up' ? 1 : -1,
             notes,
           }),

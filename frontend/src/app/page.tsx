@@ -23,10 +23,7 @@ export default function HomePage() {
   const limit = 24;
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login');
-      return;
-    }
+    // Demo mode: no auth required, just show dashboard
     setChecked(true);
   }, [router]);
 
@@ -94,18 +91,37 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                href="/settings"
-                className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
-              >
-                Settings
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
-              >
-                Sign Out
-              </button>
+              {isAuthenticated() ? (
+                <>
+                  <Link
+                    href="/settings"
+                    className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
+                  >
+                    Settings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-sm"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </header>

@@ -42,8 +42,10 @@ func AuthMiddleware(svc *Service) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
-		c.Abort()
+		// No auth — pass through in demo mode (user_id = "")
+		c.Set("user_id", "")
+		c.Set("user_email", "")
+		c.Next()
 	}
 }
 

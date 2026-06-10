@@ -76,6 +76,9 @@ func (s *Service) Signup(email, password string) (*User, error) {
 }
 
 func (s *Service) Login(email, password string) (string, *User, error) {
+	if s.db == nil {
+		return "", nil, fmt.Errorf("database not available")
+	}
 	var user User
 	var passwordHash string
 	err := s.db.QueryRow(`
@@ -120,6 +123,9 @@ func (s *Service) GetUserByID(id string) (*User, error) {
 }
 
 func (s *Service) GetUserByAPIKey(apiKey string) (*User, error) {
+	if s.db == nil {
+		return nil, nil
+	}
 	var user User
 	err := s.db.QueryRow(`
 		SELECT id, email, api_key, openrouter_key, created_at, updated_at
@@ -175,6 +181,32 @@ func (s *Service) ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+func (s *Service) CreateDefaultAdmin(email, password string) error {
+	var exists int
+	err := s.db.QueryRow("SELECT COUNT(*) FROM users WHERE email = ?", email).Scan(&exists)
+	if err != nil {
+		return err
+	}
+	if exists > 0 {
+		return nil // already exists
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	id := uuid.New().String()
+	apiKey := "nai_admin_" + uuid.New().String()[:12]
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	_, err = s.db.Exec(`
+		INSERT INTO users (id, email, password_hash, api_key, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)`,
+		id, email, string(hash), apiKey, now, now)
+	return err
 }
 
 type contextKey string

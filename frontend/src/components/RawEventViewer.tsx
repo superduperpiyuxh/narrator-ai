@@ -6,7 +6,12 @@ import { Event } from '@/lib/types';
 import { Crosshair, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatTimestamp, cn } from '@/lib/utils';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => {
+  const token = localStorage.getItem('nexus_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { headers }).then((res) => res.json());
+};
 
 interface RawEventViewerProps {
   eventIds: number[];

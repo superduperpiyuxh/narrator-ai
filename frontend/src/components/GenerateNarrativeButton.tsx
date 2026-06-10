@@ -16,8 +16,13 @@ export function GenerateNarrativeButton({ incidentId }: GenerateNarrativeButtonP
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
+      const token = localStorage.getItem('nexus_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch(`http://localhost:8080/api/incidents/${incidentId}/narrative`, {
         method: 'POST',
+        headers,
       });
 
       if (!res.ok) {
