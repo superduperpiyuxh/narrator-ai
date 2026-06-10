@@ -28,7 +28,7 @@ func main() {
 
 	graylogClient := graylog.NewClient(cfg.GraylogURL, cfg.GraylogUser, cfg.GraylogPass)
 
-	h := handler.New(db, graylogClient)
+	h := handler.New(db, graylogClient, cfg.DataDir)
 
 	r := gin.Default()
 
@@ -48,6 +48,7 @@ func main() {
 	r.GET("/api/events/type/:eventType", h.GetEventsByType)
 	r.GET("/api/stats", h.GetStats)
 	r.POST("/api/sync", h.SyncFromGraylog)
+	r.POST("/api/import", h.ImportLocal)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

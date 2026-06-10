@@ -8,6 +8,7 @@ type Config struct {
 	GraylogURL   string
 	GraylogUser  string
 	GraylogPass  string
+	DataDir      string
 }
 
 func Load() *Config {
@@ -17,6 +18,7 @@ func Load() *Config {
 		GraylogURL:   getEnv("GRAYLOG_URL", "http://localhost:9000"),
 		GraylogUser:  getEnv("GRAYLOG_USER", "admin"),
 		GraylogPass:  getEnv("GRAYLOG_PASS", "admin"),
+		DataDir:      getEnv("DATA_DIR", "../data/sample_json_20260301"),
 	}
 }
 

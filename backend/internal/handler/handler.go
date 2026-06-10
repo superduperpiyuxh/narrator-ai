@@ -1,8 +1,14 @@
 package handler
 
 import (
+	"bufio"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/superduperpiyuxh/narrator-ai/backend/internal/database"
@@ -11,12 +17,13 @@ import (
 )
 
 type Handler struct {
-	db          *database.DB
+	db            *database.DB
 	graylogClient *graylog.Client
+	dataDir       string
 }
 
-func New(db *database.DB, gc *graylog.Client) *Handler {
-	return &Handler{db: db, graylogClient: gc}
+func New(db *database.DB, gc *graylog.Client, dataDir string) *Handler {
+	return &Handler{db: db, graylogClient: gc, dataDir: dataDir}
 }
 
 func (h *Handler) Health(c *gin.Context) {
@@ -130,6 +137,118 @@ func (h *Handler) SyncFromGraylog(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"synced": totalSynced})
+}
+
+func (h *Handler) ImportLocal(c *gin.Context) {
+	pattern := filepath.Join(h.dataDir, "**", "*.json")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(matches) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no JSON files found in " + h.dataDir})
+		return
+	}
+
+	totalSynced := 0
+	for _, filePath := range matches {
+		count, err := h.importFile(filePath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed %s: %v", filepath.Base(filePath), err)})
+			return
+		}
+		totalSynced += count
+	}
+
+	c.JSON(http.StatusOK, gin.H{"synced": totalSynced, "files": len(matches)})
+}
+
+func (h *Handler) importFile(filePath string) (int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	total := 0
+	batch := make([]database.Event, 0, 5000)
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		var raw map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &raw); err != nil {
+			continue
+		}
+
+		e := mapToEvent(raw)
+		n := normalizer.NormalizeEvent(e)
+		batch = append(batch, toDBEvent(n))
+		total++
+
+		if len(batch) >= 5000 {
+			if err := h.db.InsertEvents(batch); err != nil {
+				return total, err
+			}
+			batch = batch[:0]
+			fmt.Printf("  %s: %d events imported\n", filepath.Base(filePath), total)
+		}
+	}
+
+	if len(batch) > 0 {
+		if err := h.db.InsertEvents(batch); err != nil {
+			return total, err
+		}
+	}
+
+	return total, scanner.Err()
+}
+
+func mapToEvent(raw map[string]interface{}) graylog.Event {
+	e := graylog.Event{RawJSON: raw}
+
+	getStr := func(key string) string {
+		if v, ok := raw[key]; ok {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+
+	e.Timestamp = getStr("timestamp")
+	e.Hostname = getStr("hostname")
+	e.EventType = getStr("event_type")
+	e.EventID = getStr("event_id")
+	e.User = getStr("user")
+	e.SourceIP = getStr("source_ip")
+	e.DestIP = getStr("destination_ip")
+	e.ProcessName = getStr("process_name")
+	e.CommandLine = getStr("command_line")
+	e.ParentProcess = getStr("parent_process")
+	e.LogType = getStr("log_type")
+	e.SessionID = getStr("session_id")
+	e.Department = getStr("department")
+	e.Location = getStr("location")
+	e.DeviceType = getStr("device_type")
+	e.Port = getStr("port")
+	e.Protocol = getStr("protocol")
+	e.FilePath = getStr("file_path")
+	e.Severity = getStr("severity")
+	e.Error = getStr("error")
+
+	if v, ok := raw["success"].(string); ok {
+		e.Success = v == "true"
+	}
+
+	return e
 }
 
 func toDBEvent(e graylog.Event) database.Event {

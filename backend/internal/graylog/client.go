@@ -34,7 +34,6 @@ type SearchResponse struct {
 	Fields       []string  `json:"fields"`
 	From         string    `json:"from"`
 	To           string    `json:"to"`
-	After        string    `json:"after,omitempty"`
 }
 
 type Message struct {
@@ -79,15 +78,27 @@ func (c *Client) FetchEvents(query string, limit int, from, to string) (*SearchR
 }
 
 func (c *Client) FetchAllEvents(query string, batchSize int, callback func([]Event) error) error {
-	// Use absolute time range for Dec 21-22 2025 data
-	from := "2025-12-21T00:00:00.000Z"
-	to := "2025-12-23T00:00:00.000Z"
+	// Split Dec 21-22 2025 into hourly windows for pagination
+	start, _ := time.Parse(time.RFC3339, "2025-12-21T00:00:00Z")
+	end, _ := time.Parse(time.RFC3339, "2025-12-23T00:00:00Z")
 	total := 0
 
-	for {
+	for windowStart := start; windowStart.Before(end); windowStart = windowStart.Add(time.Hour) {
+		windowEnd := windowStart.Add(time.Hour)
+		if windowEnd.After(end) {
+			windowEnd = end
+		}
+
+		from := windowStart.Format(time.RFC3339)
+		to := windowEnd.Format(time.RFC3339)
+
 		resp, err := c.FetchEvents(query, batchSize, from, to)
 		if err != nil {
-			return fmt.Errorf("fetch batch at offset %d: %w", total, err)
+			return fmt.Errorf("fetch batch %s to %s: %w", from, to, err)
+		}
+
+		if resp.TotalResults == 0 {
+			continue
 		}
 
 		events := make([]Event, 0, len(resp.Messages))
@@ -100,19 +111,8 @@ func (c *Client) FetchAllEvents(query string, batchSize int, callback func([]Eve
 		}
 
 		total += len(events)
-		fmt.Printf("  Fetched %d/%d events\n", total, resp.TotalResults)
-
-		if len(resp.Messages) < batchSize || total >= resp.TotalResults {
-			break
-		}
-
-		// Use last event timestamp as next 'from'
-		if len(resp.Messages) > 0 {
-			lastTS := resp.Messages[len(resp.Messages)-1].Message["timestamp"]
-			if ts, ok := lastTS.(string); ok && ts != "" {
-				from = ts
-			}
-		}
+		fmt.Printf("  [%s] Fetched %d events (total: %d/%d)\n",
+			windowStart.Format("Jan 02 15:00"), len(events), total, 182207)
 	}
 
 	return nil
@@ -123,7 +123,6 @@ func MessageToEvent(msg Message) Event {
 		RawJSON: msg.Message,
 	}
 
-	// Graylog strips _ prefix from GELF custom fields
 	if ts, ok := msg.Message["timestamp"].(string); ok {
 		e.Timestamp = ts
 	}
