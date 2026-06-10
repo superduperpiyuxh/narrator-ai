@@ -9,6 +9,7 @@ sleep 1
 # Set environment
 export DATA_DIR="$(dirname "$0")/data/sample_json_20260301"
 export PORT=8080
+# Set OPENROUTER_API_KEY env var before running: export OPENROUTER_API_KEY=sk-or-v1-...
 
 # Start in background with nohup
 nohup ./narrator-ai > /tmp/narrator-ai.log 2>&1 &
