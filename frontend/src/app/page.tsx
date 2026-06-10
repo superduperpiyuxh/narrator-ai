@@ -8,6 +8,7 @@ import { IncidentCard } from '@/components/IncidentCard';
 import { DashboardControls, type DashboardControlsHandle } from '@/components/DashboardControls';
 import { KeyboardShortcutsModal } from '@/components/KeyboardShortcutsModal';
 import { Shield, Keyboard } from 'lucide-react';
+import { TechniqueHeatmap } from '@/components/TechniqueHeatmap';
 import type { Incident, IncidentStats } from '@/lib/types';
 
 function getHeaders() {
@@ -241,6 +242,10 @@ export default function HomePage() {
             )}
           </div>
         )}
+
+        <div className="mb-6">
+          <TechniqueHeatmap />
+        </div>
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6" role="alert">
