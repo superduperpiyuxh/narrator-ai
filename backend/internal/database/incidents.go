@@ -205,13 +205,17 @@ func (db *DB) GetIncidentEvents(incidentID int64) ([]Event, error) {
 	var events []Event
 	for rows.Next() {
 		var e Event
+		var rawJSON string
 		err := rows.Scan(&e.ID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
 			&e.UserName, &e.SourceIP, &e.DestIP, &e.ProcessName, &e.CommandLine,
 			&e.ParentProcess, &e.LogType, &e.SessionID, &e.Department, &e.Location,
 			&e.DeviceType, &e.Success, &e.Port, &e.Protocol, &e.FilePath, &e.Severity,
-			&e.Error, &e.RawJSON, &e.CreatedAt)
+			&e.Error, &rawJSON, &e.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("scan event: %w", err)
+		}
+		if rawJSON != "" {
+			json.Unmarshal([]byte(rawJSON), &e.RawJSON)
 		}
 		events = append(events, e)
 	}
@@ -268,13 +272,17 @@ func (db *DB) GetUnprocessedEvents() ([]Event, error) {
 	var events []Event
 	for rows.Next() {
 		var e Event
+		var rawJSON string
 		err := rows.Scan(&e.ID, &e.Timestamp, &e.Hostname, &e.EventType, &e.EventID,
 			&e.UserName, &e.SourceIP, &e.DestIP, &e.ProcessName, &e.CommandLine,
 			&e.ParentProcess, &e.LogType, &e.SessionID, &e.Department, &e.Location,
 			&e.DeviceType, &e.Success, &e.Port, &e.Protocol, &e.FilePath, &e.Severity,
-			&e.Error, &e.RawJSON, &e.CreatedAt)
+			&e.Error, &rawJSON, &e.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("scan event: %w", err)
+		}
+		if rawJSON != "" {
+			json.Unmarshal([]byte(rawJSON), &e.RawJSON)
 		}
 		events = append(events, e)
 	}

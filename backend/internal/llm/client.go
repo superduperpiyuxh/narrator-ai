@@ -12,6 +12,8 @@ import (
 type Client struct {
 	apiKey     string
 	httpClient *http.Client
+	modelIndex int
+	models     []string
 }
 
 type Message struct {
@@ -42,9 +44,21 @@ func NewClient(apiKey string) *Client {
 	return &Client{
 		apiKey: apiKey,
 		httpClient: &http.Client{
-			Timeout: 60 * time.Second,
+			Timeout: 120 * time.Second,
+		},
+		modelIndex: 0,
+		models: []string{
+			"openai/gpt-4o-mini",
+			"meta-llama/llama-4-maverick:free",
+			"nvidia/llama-3.1-nemotron-70b-instruct:free",
 		},
 	}
+}
+
+func (c *Client) nextModel() string {
+	model := c.models[c.modelIndex%len(c.models)]
+	c.modelIndex++
+	return model
 }
 
 func (c *Client) Chat(messages []Message, temperature float64, maxTokens int) (string, int, error) {
@@ -52,8 +66,9 @@ func (c *Client) Chat(messages []Message, temperature float64, maxTokens int) (s
 }
 
 func (c *Client) ChatWithServer(url string, messages []Message, temperature float64, maxTokens int) (string, int, error) {
+	model := c.nextModel()
 	req := ChatRequest{
-		Model:       "anthropic/claude-3-opus",
+		Model:       model,
 		Messages:    messages,
 		Temperature: temperature,
 		MaxTokens:   maxTokens,

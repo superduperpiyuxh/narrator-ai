@@ -158,6 +158,21 @@ func (db *DB) migrate() error {
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_narratives_incident ON narratives(incident_id);
+
+	CREATE TABLE IF NOT EXISTS feedback (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		narrative_id INTEGER NOT NULL,
+		incident_id INTEGER NOT NULL,
+		rating INTEGER NOT NULL CHECK(rating IN (-1, 1)),
+		notes TEXT,
+		user_id TEXT,
+		created_at TEXT DEFAULT (datetime('now')),
+		FOREIGN KEY (narrative_id) REFERENCES narratives(id) ON DELETE CASCADE,
+		FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_feedback_narrative ON feedback(narrative_id);
+	CREATE INDEX IF NOT EXISTS idx_feedback_incident ON feedback(incident_id);
 	`
 
 	_, err := db.conn.Exec(schema)

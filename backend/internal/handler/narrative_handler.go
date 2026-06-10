@@ -80,7 +80,7 @@ func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
 		Summary:          narr.Summary,
 		Confidence:       narr.Confidence,
 		Sentences:        string(sentencesJSON),
-		ModelUsed:        "anthropic/claude-3-opus",
+		ModelUsed:        "openrouter-rotating",
 		Temperature:      0.2,
 		TokensUsed:       tokens,
 		GenerationTimeMs: duration.Milliseconds(),

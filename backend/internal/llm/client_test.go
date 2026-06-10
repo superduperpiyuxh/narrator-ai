@@ -44,6 +44,7 @@ func TestChatSuccess(t *testing.T) {
 	client := &Client{
 		apiKey:     "test-key",
 		httpClient: server.Client(),
+		models:     []string{"test-model"},
 	}
 
 	messages := []Message{
@@ -73,6 +74,7 @@ func TestChatError(t *testing.T) {
 	client := &Client{
 		apiKey:     "test-key",
 		httpClient: server.Client(),
+		models:     []string{"test-model"},
 	}
 
 	_, _, err := client.Chat([]Message{{Role: "user", Content: "test"}}, 0.2, 100)
@@ -97,6 +99,7 @@ func TestChatNoChoices(t *testing.T) {
 	client := &Client{
 		apiKey:     "test-key",
 		httpClient: server.Client(),
+		models:     []string{"test-model"},
 	}
 
 	_, _, err := client.Chat([]Message{{Role: "user", Content: "test"}}, 0.2, 100)
