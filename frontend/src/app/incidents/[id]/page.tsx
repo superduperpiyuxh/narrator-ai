@@ -9,6 +9,7 @@ import { TechniqueBadge } from '@/components/TechniqueBadge';
 import { GenerateNarrativeButton } from '@/components/GenerateNarrativeButton';
 import { TimelineView } from '@/components/TimelineView';
 import { ArrowLeft, Shield, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { KillChain } from '@/components/KillChain';
 import { API_BASE } from '@/lib/api';
 import type { Incident, Narrative, Feedback } from '@/lib/types';
 
@@ -142,6 +143,16 @@ export default function IncidentDetailPage() {
                   name={`${tech.name} (${tech.event_count})`}
                 />
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Kill Chain */}
+        {incident.techniques && incident.techniques.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-sm font-medium text-zinc-400 mb-3">Kill Chain</h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <KillChain techniques={incident.techniques} />
             </div>
           </section>
         )}
