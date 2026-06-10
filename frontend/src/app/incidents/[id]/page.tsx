@@ -7,7 +7,8 @@ import { StoryCard } from '@/components/StoryCard';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { TechniqueBadge } from '@/components/TechniqueBadge';
 import { GenerateNarrativeButton } from '@/components/GenerateNarrativeButton';
-import { ArrowLeft, Shield } from 'lucide-react';
+import { TimelineView } from '@/components/TimelineView';
+import { ArrowLeft, Shield, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
 import type { Incident, Narrative, Feedback } from '@/lib/types';
 
@@ -27,6 +28,8 @@ export default function IncidentDetailPage() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState<'narrative' | 'timeline'>('narrative');
+  const [timelineOpen, setTimelineOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -143,16 +146,81 @@ export default function IncidentDetailPage() {
           </section>
         )}
 
-        {narrative ? (
-          <StoryCard narrative={narrative} incidentId={incidentId} existingFeedback={feedback} />
-        ) : (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
-            <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
-            <h3 className="text-lg font-medium text-zinc-300 mb-2">No narrative generated</h3>
-            <p className="text-zinc-500 mb-6">
-              Generate an AI narrative for this incident to see the attack story.
-            </p>
-            <GenerateNarrativeButton incidentId={incidentId} />
+        {/* View toggle */}
+        <div className="flex items-center gap-2 mb-6" role="tablist" aria-label="Incident view">
+          <button
+            onClick={() => setActiveView('narrative')}
+            className={activeView === 'narrative'
+              ? 'px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-100 border border-zinc-700'
+              : 'px-4 py-2 text-sm font-medium rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors'
+            }
+            role="tab"
+            aria-selected={activeView === 'narrative'}
+            aria-controls="narrative-panel"
+          >
+            Narrative
+          </button>
+          <button
+            onClick={() => setActiveView('timeline')}
+            className={activeView === 'timeline'
+              ? 'px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-100 border border-zinc-700'
+              : 'px-4 py-2 text-sm font-medium rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors'
+            }
+            role="tab"
+            aria-selected={activeView === 'timeline'}
+            aria-controls="timeline-panel"
+          >
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+              Timeline
+            </span>
+          </button>
+        </div>
+
+        {/* Narrative view */}
+        {activeView === 'narrative' && (
+          <div id="narrative-panel" role="tabpanel" aria-label="Narrative view">
+            {narrative ? (
+              <StoryCard narrative={narrative} incidentId={incidentId} existingFeedback={feedback} />
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
+                <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
+                <h3 className="text-lg font-medium text-zinc-300 mb-2">No narrative generated</h3>
+                <p className="text-zinc-500 mb-6">
+                  Generate an AI narrative for this incident to see the attack story.
+                </p>
+                <GenerateNarrativeButton incidentId={incidentId} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Timeline view - collapsible section */}
+        {activeView === 'timeline' && (
+          <div id="timeline-panel" role="tabpanel" aria-label="Timeline view">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setTimelineOpen(!timelineOpen)}
+                className="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/50 transition-colors"
+                aria-expanded={timelineOpen}
+                aria-controls="timeline-content"
+              >
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-zinc-400" aria-hidden="true" />
+                  <h3 className="text-lg font-semibold text-zinc-100">Event Timeline</h3>
+                </div>
+                {timelineOpen ? (
+                  <ChevronUp className="w-5 h-5 text-zinc-500" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-zinc-500" aria-hidden="true" />
+                )}
+              </button>
+              {timelineOpen && (
+                <div id="timeline-content" className="px-6 pb-6">
+                  <TimelineView incidentId={incidentId} />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
