@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { isAuthenticated } from '@/lib/api';
 import { StoryCard } from '@/components/StoryCard';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { TechniqueBadge } from '@/components/TechniqueBadge';
@@ -21,24 +20,16 @@ function getHeaders() {
 }
 
 export default function IncidentDetailPage() {
-  const router = useRouter();
   const params = useParams();
   const incidentId = Number(params.id);
 
-  const [checked, setChecked] = useState(false);
   const [incident, setIncident] = useState<Incident | null>(null);
   const [narrative, setNarrative] = useState<Narrative | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Demo mode: no auth required
-    setChecked(true);
-  }, [router]);
-
-  useEffect(() => {
-    if (!checked) return;
-
     const load = async () => {
       const headers = getHeaders();
       try {
@@ -61,15 +52,17 @@ export default function IncidentDetailPage() {
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
+      } finally {
+        setLoading(false);
       }
     };
     load();
-  }, [checked, incidentId]);
+  }, [incidentId]);
 
-  if (!checked) {
+  if (loading) {
     return (
       <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-zinc-400" role="status">Loading...</div>
+        <div className="text-zinc-400" role="status">Loading incident...</div>
       </main>
     );
   }
@@ -92,13 +85,7 @@ export default function IncidentDetailPage() {
     );
   }
 
-  if (!incident) {
-    return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-zinc-400" role="status">Loading incident...</div>
-      </main>
-    );
-  }
+  if (!incident) return null;
 
   return (
     <div className="min-h-screen bg-zinc-950 p-6">

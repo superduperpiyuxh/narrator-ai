@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { isAuthenticated, clearToken } from '@/lib/api';
 import { IncidentCard } from '@/components/IncidentCard';
@@ -9,13 +8,21 @@ import { DashboardControls } from '@/components/DashboardControls';
 import { Shield } from 'lucide-react';
 import type { Incident, IncidentStats } from '@/lib/types';
 
+const API_BASE = 'http://localhost:8080';
+
+function getHeaders() {
+  const token = localStorage.getItem('nexus_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 export default function HomePage() {
-  const router = useRouter();
-  const [checked, setChecked] = useState(false);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<IncidentStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [severity, setSeverity] = useState('');
   const [status, setStatus] = useState('');
@@ -23,20 +30,9 @@ export default function HomePage() {
   const limit = 24;
 
   useEffect(() => {
-    // Demo mode: no auth required, just show dashboard
-    setChecked(true);
-  }, [router]);
-
-  useEffect(() => {
-    if (!checked) return;
-
     const loadData = async () => {
+      const headers = getHeaders();
       try {
-        const API_BASE = 'http://localhost:8080';
-        const token = localStorage.getItem('nexus_token');
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
         const params = new URLSearchParams();
         params.set('limit', String(limit));
         params.set('offset', String((page - 1) * limit));
@@ -44,34 +40,37 @@ export default function HomePage() {
         if (status) params.set('status', status);
         if (sourceIP) params.set('source_ip', sourceIP);
 
-        const incRes = await fetch(`${API_BASE}/api/incidents?${params.toString()}`, { headers });
+        const [incRes, statsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/incidents?${params.toString()}`, { headers }),
+          fetch(`${API_BASE}/api/incidents/stats`, { headers }),
+        ]);
+
         if (incRes.ok) {
           const data = await incRes.json();
           setIncidents(data.incidents || []);
           setTotal(data.total);
         }
-
-        const statsRes = await fetch(`${API_BASE}/api/incidents/stats`, { headers });
         if (statsRes.ok) {
           setStats(await statsRes.json());
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
+      } finally {
+        setLoading(false);
       }
     };
     loadData();
-  }, [checked, page, severity, status, sourceIP]);
+  }, [page, severity, status, sourceIP]);
 
   const handleLogout = () => {
     clearToken();
-    localStorage.removeItem('nexus_user');
-    router.push('/login');
+    window.location.reload();
   };
 
-  if (!checked) {
+  if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-400" role="status">Loading...</div>
+      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-zinc-400" role="status">Loading dashboard...</div>
       </main>
     );
   }
@@ -93,31 +92,19 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               {isAuthenticated() ? (
                 <>
-                  <Link
-                    href="/settings"
-                    className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
-                  >
+                  <Link href="/settings" className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm">
                     Settings
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
-                  >
+                  <button onClick={handleLogout} className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm">
                     Sign Out
                   </button>
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm"
-                  >
+                  <Link href="/login" className="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 transition-colors text-sm">
                     Sign In
                   </Link>
-                  <Link
-                    href="/signup"
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-sm"
-                  >
+                  <Link href="/signup" className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-sm">
                     Sign Up
                   </Link>
                 </>
@@ -129,32 +116,24 @@ export default function HomePage() {
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" role="region" aria-label="Incident statistics">
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-              <div className="text-2xl font-bold text-zinc-100">
-                {stats.total_incidents.toLocaleString()}
-              </div>
+              <div className="text-2xl font-bold text-zinc-100">{stats.total_incidents.toLocaleString()}</div>
               <div className="text-sm text-zinc-500">Total Incidents</div>
             </div>
             {stats.by_severity?.critical && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-                <div className="text-2xl font-bold text-red-400">
-                  {stats.by_severity.critical.toLocaleString()}
-                </div>
+                <div className="text-2xl font-bold text-red-400">{stats.by_severity.critical.toLocaleString()}</div>
                 <div className="text-sm text-zinc-500">Critical</div>
               </div>
             )}
             {stats.by_severity?.high && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-                <div className="text-2xl font-bold text-orange-400">
-                  {stats.by_severity.high.toLocaleString()}
-                </div>
+                <div className="text-2xl font-bold text-orange-400">{stats.by_severity.high.toLocaleString()}</div>
                 <div className="text-sm text-zinc-500">High</div>
               </div>
             )}
             {stats.by_severity?.medium && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-                <div className="text-2xl font-bold text-yellow-400">
-                  {stats.by_severity.medium.toLocaleString()}
-                </div>
+                <div className="text-2xl font-bold text-yellow-400">{stats.by_severity.medium.toLocaleString()}</div>
                 <div className="text-sm text-zinc-500">Medium</div>
               </div>
             )}
@@ -186,10 +165,8 @@ export default function HomePage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
             <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
             <h2 className="text-lg font-medium text-zinc-300 mb-2">No incidents found</h2>
-            <p className="text-zinc-500 mb-4">
-              {severity || status || sourceIP
-                ? 'Try adjusting your filters.'
-                : 'Import data from the backend to get started.'}
+            <p className="text-zinc-500">
+              {severity || status || sourceIP ? 'Try adjusting your filters.' : 'Import data to get started.'}
             </p>
           </div>
         )}
@@ -197,10 +174,7 @@ export default function HomePage() {
         {totalPages > 1 && (
           <nav className="flex items-center justify-center gap-2 mt-8" aria-label="Pagination">
             {page > 1 && (
-              <button
-                onClick={() => setPage(page - 1)}
-                className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
-              >
+              <button onClick={() => setPage(page - 1)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm">
                 Previous
               </button>
             )}
@@ -208,10 +182,7 @@ export default function HomePage() {
               Page {page} of {totalPages} ({total.toLocaleString()} incidents)
             </span>
             {page < totalPages && (
-              <button
-                onClick={() => setPage(page + 1)}
-                className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
-              >
+              <button onClick={() => setPage(page + 1)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm">
                 Next
               </button>
             )}

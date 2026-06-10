@@ -1,5 +1,6 @@
 # Environment
 .env
+.env.*
 
 # Data files
 data/
@@ -22,6 +23,9 @@ frontend/out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Planning (internal, not for repo)
+.planning/
 
 # Docker
 mongo_data/
