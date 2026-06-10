@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Data Foundation** - Pull and store security logs from Graylog
 - [ ] **Phase 2: Incident Intelligence** - Group events into incidents with MITRE ATT&CK mapping
 - [ ] **Phase 3: Narrative Engine** - Generate AI narratives with source tracing and injection prevention
-- [ ] **Phase 4: Story Dashboard** - Display incidents as story cards with analyst feedback
+- [x] **Phase 4: Story Dashboard** - Display incidents as story cards with analyst feedback
 
 ## Phase Details
 
@@ -76,12 +76,12 @@ Plans:
   2. Story cards show narrative sentences with confidence scores and technique labels
   3. Raw event viewer provides source tracing — hovering a sentence reveals the raw source event
   4. Analyst can submit feedback (thumbs up/down + notes) on narrative quality
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [x] 04-01: Foundation — Types, API client, dark theme, feedback DB + endpoint — [details](phases/04-story-dashboard/04-01-PLAN.md)
+- [x] 04-02: Dashboard — Incident list, story cards, hover-to-reveal source tracing — [details](phases/04-story-dashboard/04-02-PLAN.md)
+- [x] 04-03: Feedback + Polish — Feedback form, loading states, E2E verification — [details](phases/04-story-dashboard/04-03-PLAN.md)
 
 ## Progress
 
@@ -93,4 +93,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Data Foundation | 0/3 | Not started | - |
 | 2. Incident Intelligence | 0/3 | Planned | - |
 | 3. Narrative Engine | 0/3 | Not started | - |
-| 4. Story Dashboard | 0/3 | Not started | - |
+| 4. Story Dashboard | 3/3 | Completed | 2026-06-10 |
