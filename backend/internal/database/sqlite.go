@@ -82,6 +82,65 @@ func (db *DB) migrate() error {
 	CREATE INDEX IF NOT EXISTS idx_events_source_ip ON events(source_ip);
 	CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_name);
 	CREATE INDEX IF NOT EXISTS idx_events_success ON events(success);
+
+	CREATE TABLE IF NOT EXISTS incidents (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT NOT NULL,
+		description TEXT,
+		source_ip TEXT NOT NULL,
+		start_time TEXT NOT NULL,
+		end_time TEXT NOT NULL,
+		event_count INTEGER NOT NULL DEFAULT 0,
+		unique_users TEXT,
+		unique_ips TEXT,
+		unique_hostnames TEXT,
+		severity TEXT DEFAULT 'low',
+		status TEXT DEFAULT 'new',
+		techniques TEXT,
+		tactics TEXT,
+		mitre_attack_ids TEXT,
+		confidence REAL DEFAULT 0.0,
+		raw_summary TEXT,
+		created_at TEXT DEFAULT (datetime('now')),
+		updated_at TEXT DEFAULT (datetime('now'))
+	);
+
+	CREATE TABLE IF NOT EXISTS incident_events (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		incident_id INTEGER NOT NULL,
+		event_id INTEGER NOT NULL,
+		timestamp TEXT NOT NULL,
+		source_ip TEXT,
+		FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE,
+		FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+		UNIQUE(incident_id, event_id)
+	);
+
+	CREATE TABLE IF NOT EXISTS techniques (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		technique_id TEXT NOT NULL UNIQUE,
+		name TEXT NOT NULL,
+		description TEXT,
+		tactic TEXT,
+		url TEXT,
+		created_at TEXT DEFAULT (datetime('now'))
+	);
+
+	CREATE TABLE IF NOT EXISTS incident_techniques (
+		incident_id INTEGER NOT NULL,
+		technique_id TEXT NOT NULL,
+		event_count INTEGER DEFAULT 0,
+		PRIMARY KEY (incident_id, technique_id),
+		FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE,
+		FOREIGN KEY (technique_id) REFERENCES techniques(technique_id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_incidents_source_ip ON incidents(source_ip);
+	CREATE INDEX IF NOT EXISTS idx_incidents_start_time ON incidents(start_time);
+	CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+	CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+	CREATE INDEX IF NOT EXISTS idx_incident_events_incident ON incident_events(incident_id);
+	CREATE INDEX IF NOT EXISTS idx_incident_events_event ON incident_events(event_id);
 	`
 
 	_, err := db.conn.Exec(schema)
@@ -92,4 +151,8 @@ func (db *DB) HealthCheck() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	return db.conn.PingContext(ctx)
+}
+
+func (db *DB) Conn() *sql.DB {
+	return db.conn
 }

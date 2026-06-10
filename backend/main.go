@@ -26,6 +26,7 @@ func main() {
 	defer db.Close()
 
 	h := handler.New(db, cfg.DataDir)
+	ih := handler.NewIncidentHandler(db)
 
 	r := gin.Default()
 
@@ -45,6 +46,13 @@ func main() {
 	r.GET("/api/events/type/:eventType", h.GetEventsByType)
 	r.GET("/api/stats", h.GetStats)
 	r.POST("/api/import", h.ImportLocal)
+
+	r.POST("/api/incidents/group", ih.GroupIncidents)
+	r.GET("/api/incidents", ih.GetIncidents)
+	r.GET("/api/incidents/:id", ih.GetIncident)
+	r.GET("/api/incidents/:id/events", ih.GetIncidentEvents)
+	r.GET("/api/incidents/stats", ih.GetIncidentStats)
+	r.GET("/api/techniques", ih.GetTechniques)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
