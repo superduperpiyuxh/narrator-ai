@@ -31,8 +31,8 @@ export function FeedbackButton({ narrativeId, incidentId, existingFeedback }: Fe
         className={cn(
           'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors',
           isExpanded
-            ? 'bg-zinc-700 text-zinc-200'
-            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+            ? 'bg-surface-hover text-foreground/80'
+            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
         )}
         aria-expanded={isExpanded}
         aria-label="Rate this narrative"

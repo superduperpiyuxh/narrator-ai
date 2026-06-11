@@ -26,29 +26,29 @@ function getEventTypeColor(eventType: string): {
   const lower = eventType.toLowerCase();
   if (lower === 'authentication') {
     return {
-      dot: 'bg-blue-500',
-      bg: 'bg-blue-500/10',
-      text: 'text-blue-400',
-      border: 'border-blue-500/30',
-      icon: 'text-blue-400',
+      dot: 'bg-event-auth',
+      bg: 'bg-event-auth/10',
+      text: 'text-event-auth',
+      border: 'border-event-auth/30',
+      icon: 'text-event-auth',
     };
   }
   if (lower === 'process_activity' || lower === 'process') {
     return {
-      dot: 'bg-green-500',
-      bg: 'bg-green-500/10',
-      text: 'text-green-400',
-      border: 'border-green-500/30',
-      icon: 'text-green-400',
+      dot: 'bg-event-process',
+      bg: 'bg-event-process/10',
+      text: 'text-event-process',
+      border: 'border-event-process/30',
+      icon: 'text-event-process',
     };
   }
   if (lower === 'network_activity' || lower === 'network') {
     return {
-      dot: 'bg-purple-500',
-      bg: 'bg-purple-500/10',
-      text: 'text-purple-400',
-      border: 'border-purple-500/30',
-      icon: 'text-purple-400',
+      dot: 'bg-event-network',
+      bg: 'bg-event-network/10',
+      text: 'text-event-network',
+      border: 'border-event-network/30',
+      icon: 'text-event-network',
     };
   }
   if (
@@ -57,19 +57,19 @@ function getEventTypeColor(eventType: string): {
     lower === 'file_delete'
   ) {
     return {
-      dot: 'bg-yellow-500',
-      bg: 'bg-yellow-500/10',
-      text: 'text-yellow-400',
-      border: 'border-yellow-500/30',
-      icon: 'text-yellow-400',
+      dot: 'bg-event-file',
+      bg: 'bg-event-file/10',
+      text: 'text-event-file',
+      border: 'border-event-file/30',
+      icon: 'text-event-file',
     };
   }
   return {
     dot: 'bg-zinc-500',
     bg: 'bg-zinc-500/10',
-    text: 'text-zinc-400',
-    border: 'border-zinc-500/30',
-    icon: 'text-zinc-400',
+    text: 'text-muted-foreground',
+    border: 'border-muted/30',
+    icon: 'text-muted-foreground',
   };
 }
 
@@ -116,12 +116,12 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            'w-3 h-3 rounded-full border-2 border-zinc-900 z-10 flex-shrink-0 mt-1',
+            'w-3 h-3 rounded-full border-2 border-background z-10 flex-shrink-0 mt-1',
             colors.dot
           )}
         />
         {!isLast && (
-          <div className="w-px flex-1 bg-zinc-700 min-h-[2rem]" />
+          <div className="w-px flex-1 bg-muted-foreground/60 min-h-[2rem]" />
         )}
       </div>
 
@@ -131,7 +131,7 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
           'flex-1 rounded-lg border p-3 mb-3 transition-colors',
           colors.bg,
           colors.border,
-          'hover:border-zinc-600'
+          'hover:border-border'
         )}
       >
         {/* Header row */}
@@ -146,12 +146,12 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] text-zinc-600">
+            <span className="font-mono text-[10px] text-muted-foreground/60">
               #{event.id}
             </span>
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-zinc-600 hover:text-zinc-400 transition-colors p-0.5"
+              className="text-muted-foreground/60 hover:text-muted-foreground transition-colors p-0.5"
               aria-label={expanded ? 'Collapse event details' : 'Expand event details'}
               aria-expanded={expanded}
             >
@@ -166,8 +166,8 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
 
         {/* Timestamp */}
         <div className="flex items-center gap-1.5 mb-2">
-          <Clock className="w-3 h-3 text-zinc-500" aria-hidden="true" />
-          <span className="text-xs text-zinc-400">
+          <Clock className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+          <span className="text-xs text-muted-foreground">
             {formatTimestamp(event.timestamp)}
           </span>
         </div>
@@ -176,79 +176,79 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
           {event.hostname && (
             <>
-              <span className="text-zinc-500">Host</span>
-              <span className="text-zinc-300 truncate">{event.hostname}</span>
+              <span className="text-muted-foreground">Host</span>
+              <span className="text-foreground/80 truncate">{event.hostname}</span>
             </>
           )}
           {event.source_ip && (
             <>
-              <span className="text-zinc-500">Source IP</span>
-              <span className="text-zinc-300 truncate">{event.source_ip}</span>
+              <span className="text-muted-foreground">Source IP</span>
+              <span className="text-foreground/80 truncate">{event.source_ip}</span>
             </>
           )}
           {event.process_name && (
             <>
-              <span className="text-zinc-500">Process</span>
-              <span className="text-zinc-300 truncate">{event.process_name}</span>
+              <span className="text-muted-foreground">Process</span>
+              <span className="text-foreground/80 truncate">{event.process_name}</span>
             </>
           )}
           {event.user_name && (
             <>
-              <span className="text-zinc-500">User</span>
-              <span className="text-zinc-300 truncate">{event.user_name}</span>
+              <span className="text-muted-foreground">User</span>
+              <span className="text-foreground/80 truncate">{event.user_name}</span>
             </>
           )}
           {event.dest_ip && (
             <>
-              <span className="text-zinc-500">Dest IP</span>
-              <span className="text-zinc-300 truncate">{event.dest_ip}</span>
+              <span className="text-muted-foreground">Dest IP</span>
+              <span className="text-foreground/80 truncate">{event.dest_ip}</span>
             </>
           )}
         </div>
 
         {/* Expanded details */}
         {expanded && (
-          <div className="mt-3 pt-3 border-t border-zinc-800 space-y-1 text-xs font-mono">
+          <div className="mt-3 pt-3 border-t border-border space-y-1 text-xs font-mono">
             {event.command_line && (
               <div>
-                <span className="text-zinc-500">Command: </span>
-                <span className="text-zinc-400 break-all">{event.command_line}</span>
+                <span className="text-muted-foreground">Command: </span>
+                <span className="text-muted-foreground break-all">{event.command_line}</span>
               </div>
             )}
             {event.parent_process && (
               <div>
-                <span className="text-zinc-500">Parent Process: </span>
-                <span className="text-zinc-400">{event.parent_process}</span>
+                <span className="text-muted-foreground">Parent Process: </span>
+                <span className="text-muted-foreground">{event.parent_process}</span>
               </div>
             )}
             {event.log_type && (
               <div>
-                <span className="text-zinc-500">Log Type: </span>
-                <span className="text-zinc-400">{event.log_type}</span>
+                <span className="text-muted-foreground">Log Type: </span>
+                <span className="text-muted-foreground">{event.log_type}</span>
               </div>
             )}
             {event.session_id && (
               <div>
-                <span className="text-zinc-500">Session ID: </span>
-                <span className="text-zinc-400">{event.session_id}</span>
+                <span className="text-muted-foreground">Session ID: </span>
+                <span className="text-muted-foreground">{event.session_id}</span>
               </div>
             )}
             {event.file_path && (
               <div>
-                <span className="text-zinc-500">File Path: </span>
-                <span className="text-zinc-400 break-all">{event.file_path}</span>
+                <span className="text-muted-foreground">File Path: </span>
+                <span className="text-muted-foreground break-all">{event.file_path}</span>
               </div>
             )}
             {event.protocol && (
               <div>
-                <span className="text-zinc-500">Protocol: </span>
-                <span className="text-zinc-400">{event.protocol}</span>
+                <span className="text-muted-foreground">Protocol: </span>
+                <span className="text-muted-foreground">{event.protocol}</span>
               </div>
             )}
             {event.port && (
               <div>
-                <span className="text-zinc-500">Port: </span>
-                <span className="text-zinc-400">{event.port}</span>
+                <span className="text-muted-foreground">Port: </span>
+                <span className="text-muted-foreground">{event.port}</span>
               </div>
             )}
           </div>
@@ -325,8 +325,8 @@ export function TimelineView({ incidentId }: TimelineViewProps) {
       <div className="space-y-4" aria-label="Loading timeline events" aria-busy="true">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex gap-4">
-            <div className="w-3 h-3 rounded-full bg-zinc-800 animate-pulse mt-1" />
-            <div className="flex-1 h-24 bg-zinc-900 rounded-lg animate-pulse" />
+            <div className="w-3 h-3 rounded-full bg-surface animate-pulse mt-1" />
+            <div className="flex-1 h-24 bg-card rounded-lg animate-pulse" />
           </div>
         ))}
       </div>
@@ -343,9 +343,9 @@ export function TimelineView({ incidentId }: TimelineViewProps) {
 
   if (events.length === 0) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center">
-        <Clock className="w-8 h-8 text-zinc-600 mx-auto mb-3" aria-hidden="true" />
-        <p className="text-zinc-500 text-sm">No events found for this incident</p>
+      <div className="bg-card border border-border rounded-lg p-8 text-center">
+        <Clock className="w-8 h-8 text-muted-foreground/60 mx-auto mb-3" aria-hidden="true" />
+        <p className="text-muted-foreground text-sm">No events found for this incident</p>
       </div>
     );
   }
@@ -358,26 +358,26 @@ export function TimelineView({ incidentId }: TimelineViewProps) {
       {/* Summary bar */}
       {summary && (
         <div
-          className="flex flex-wrap items-center gap-4 mb-6 p-3 bg-zinc-900 border border-zinc-800 rounded-lg"
+          className="flex flex-wrap items-center gap-4 mb-6 p-3 bg-card border border-border rounded-lg"
           role="region"
           aria-label="Timeline summary"
         >
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-zinc-400" aria-hidden="true" />
-            <span className="text-sm font-medium text-zinc-300">
+            <Clock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <span className="text-sm font-medium text-foreground/80">
               {summary.total.toLocaleString()} events
             </span>
           </div>
-          <div className="text-zinc-600">|</div>
-          <div className="text-xs text-zinc-500">
-            <span className="text-zinc-400">{summary.timeSpan}</span> span
+          <div className="text-muted-foreground/60">|</div>
+          <div className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground">{summary.timeSpan}</span> span
           </div>
-          <div className="text-zinc-600">|</div>
-          <div className="text-xs text-zinc-500">
-            <span className="text-zinc-400">{summary.uniqueActors}</span> unique actors
+          <div className="text-muted-foreground/60">|</div>
+          <div className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground">{summary.uniqueActors}</span> unique actors
           </div>
-          <div className="text-zinc-600">|</div>
-          <div className="text-xs text-zinc-500">
+          <div className="text-muted-foreground/60">|</div>
+          <div className="text-xs text-muted-foreground">
             {summary.start} &rarr; {summary.end}
           </div>
         </div>
@@ -386,15 +386,15 @@ export function TimelineView({ incidentId }: TimelineViewProps) {
       {/* Event type legend */}
       <div className="flex flex-wrap gap-3 mb-6" aria-label="Event type legend">
         {[
-          { type: 'authentication', color: 'bg-blue-500', label: 'Authentication' },
-          { type: 'process', color: 'bg-green-500', label: 'Process' },
-          { type: 'network', color: 'bg-purple-500', label: 'Network' },
-          { type: 'file', color: 'bg-yellow-500', label: 'File' },
+          { type: 'authentication', color: 'bg-event-auth', label: 'Authentication' },
+          { type: 'process', color: 'bg-event-process', label: 'Process' },
+          { type: 'network', color: 'bg-event-network', label: 'Network' },
+          { type: 'file', color: 'bg-event-file', label: 'File' },
           { type: 'other', color: 'bg-zinc-500', label: 'Other' },
         ].map(({ type, color, label }) => (
           <div key={type} className="flex items-center gap-1.5">
             <div className={cn('w-2 h-2 rounded-full', color)} />
-            <span className="text-xs text-zinc-500">{label}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>
@@ -419,7 +419,7 @@ export function TimelineView({ incidentId }: TimelineViewProps) {
       {hasMore && (
         <button
           onClick={() => setShowAll(true)}
-          className="mt-4 flex items-center gap-2 mx-auto text-sm text-zinc-400 hover:text-zinc-200 transition-colors px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700"
+          className="mt-4 flex items-center gap-2 mx-auto text-sm text-muted-foreground hover:text-foreground/80 transition-colors px-4 py-2 rounded-lg bg-card border border-border hover:border-border"
         >
           <ArrowDown className="w-4 h-4" aria-hidden="true" />
           Show all {events.length} events ({events.length - VISIBLE_LIMIT} more)

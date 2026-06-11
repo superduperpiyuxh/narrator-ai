@@ -10,12 +10,12 @@ export function TechniqueBadge({ techniqueId, name, className }: TechniqueBadgeP
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono border border-zinc-700 bg-zinc-800/50 text-zinc-300',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono border border-border bg-surface/50 text-foreground/80',
         className
       )}
     >
-      <span className="text-zinc-500">{techniqueId}</span>
-      <span className="text-zinc-400">{name}</span>
+      <span className="text-muted-foreground">{techniqueId}</span>
+      <span className="text-muted-foreground">{name}</span>
     </span>
   );
 }

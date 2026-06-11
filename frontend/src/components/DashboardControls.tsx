@@ -78,7 +78,7 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
             Search by source IP
           </label>
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" aria-hidden="true" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <input
               id="source-ip-search"
               ref={searchInputRef}
@@ -86,12 +86,12 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
               value={searchIP}
               onChange={(e) => setSearchIP(e.target.value)}
               placeholder="Search by source IP..."
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+              className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-2 text-sm text-foreground/80 placeholder-muted-foreground focus:outline-none focus:border-primary"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
+            className="px-4 py-2 bg-surface text-foreground/80 rounded-lg hover:bg-surface-hover transition-colors text-sm"
           >
             Search
           </button>
@@ -106,7 +106,7 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
             id="severity-filter"
             value={currentSeverity}
             onChange={(e) => router.push(buildURL({ severity: e.target.value, page: '1' }))}
-            className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500"
+            className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground/80 focus:outline-none focus:border-primary"
           >
             <option value="">All Severities</option>
             <option value="critical">Critical</option>
@@ -120,13 +120,13 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
       {/* Active filters */}
       {hasFilters && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-zinc-500">Active filters:</span>
+          <span className="text-xs text-muted-foreground">Active filters:</span>
           {currentSeverity && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-surface rounded text-xs text-foreground/80">
               Severity: {currentSeverity}
               <button
                 onClick={() => router.push(buildURL({ severity: '', page: '1' }))}
-                className="text-zinc-500 hover:text-zinc-300"
+                className="text-muted-foreground hover:text-foreground/80"
                 aria-label={`Remove severity filter: ${currentSeverity}`}
               >
                 <X className="w-3 h-3" />
@@ -134,11 +134,11 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
             </span>
           )}
           {currentSourceIP && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-surface rounded text-xs text-foreground/80">
               IP: {currentSourceIP}
               <button
                 onClick={() => router.push(buildURL({ source_ip: '', page: '1' }))}
-                className="text-zinc-500 hover:text-zinc-300"
+                className="text-muted-foreground hover:text-foreground/80"
                 aria-label={`Remove IP filter: ${currentSourceIP}`}
               >
                 <X className="w-3 h-3" />
@@ -147,7 +147,7 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
           )}
           <button
             onClick={() => router.push('/')}
-            className="text-xs text-zinc-500 hover:text-zinc-300 underline"
+            className="text-xs text-muted-foreground hover:text-foreground/80 underline"
           >
             Clear all
           </button>

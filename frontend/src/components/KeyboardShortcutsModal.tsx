@@ -47,7 +47,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts"
@@ -57,17 +57,17 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
     >
       <div
         ref={modalRef}
-        className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-card border border-border rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl"
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Keyboard className="w-5 h-5 text-blue-500" aria-hidden="true" />
-            <h2 className="text-lg font-semibold text-zinc-100">Keyboard Shortcuts</h2>
+            <Keyboard className="w-5 h-5 text-primary" aria-hidden="true" />
+            <h2 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h2>
           </div>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors rounded"
+            className="p-1 text-muted-foreground hover:text-foreground/80 transition-colors rounded"
             aria-label="Close shortcuts modal"
           >
             <X className="w-5 h-5" />
@@ -76,17 +76,17 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
 
         <div className="space-y-3">
           {shortcuts.map((shortcut, index) => (
-            <div key={index} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
-              <span className="text-sm text-zinc-400">{shortcut.description}</span>
+            <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <span className="text-sm text-muted-foreground">{shortcut.description}</span>
               <div className="flex items-center gap-1">
                 {shortcut.keys.map((key, keyIndex) => (
                   <span key={keyIndex} className="flex items-center gap-1">
-                    {keyIndex > 0 && <span className="text-xs text-zinc-600">then</span>}
+                    {keyIndex > 0 && <span className="text-xs text-muted-foreground/60">then</span>}
                     <kbd
                       className={cn(
                         'inline-flex items-center justify-center min-w-[24px] h-6 px-2',
-                        'bg-zinc-800 border border-zinc-700 rounded text-xs font-mono',
-                        'text-zinc-300'
+                        'bg-surface border border-border rounded text-xs font-mono',
+                        'text-foreground/80'
                       )}
                     >
                       {key}
@@ -98,9 +98,9 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
           ))}
         </div>
 
-        <div className="mt-6 pt-4 border-t border-zinc-800">
-          <p className="text-xs text-zinc-500 text-center">
-            Press <kbd className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-xs font-mono text-zinc-300">?</kbd> anywhere to toggle this help
+        <div className="mt-6 pt-4 border-t border-border">
+          <p className="text-xs text-muted-foreground text-center">
+            Press <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded text-xs font-mono text-foreground/80">?</kbd> anywhere to toggle this help
           </p>
         </div>
       </div>

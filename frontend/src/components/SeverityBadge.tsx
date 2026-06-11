@@ -17,7 +17,7 @@ export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
     <span
       className={cn(
         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
-        colors[severity.toLowerCase()] || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+        colors[severity.toLowerCase()] || 'bg-muted-foreground/20 text-muted-foreground border-muted/30',
         className
       )}
       role="status"

@@ -5,7 +5,7 @@ import { Incident } from '@/lib/types';
 import { SeverityBadge } from './SeverityBadge';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { TechniqueBadge } from './TechniqueBadge';
-import { formatTimestamp, truncate, cn } from '@/lib/utils';
+import { cn, formatTimestamp, getSeverityDot } from '@/lib/utils';
 
 interface IncidentCardProps {
   incident: Incident;
@@ -16,31 +16,39 @@ export const IncidentCard = memo(function IncidentCard({ incident, selected = fa
   const displayTechniques = incident.techniques?.slice(0, 3) || [];
   const remainingCount = (incident.techniques?.length || 0) - 3;
 
+  const severityBorder: Record<string, string> = {
+    critical: 'border-l-severity-critical',
+    high: 'border-l-severity-high',
+    medium: 'border-l-severity-medium',
+    low: 'border-l-severity-low',
+  };
+
   return (
     <a
       href={`/incidents/${incident.id}`}
       className={cn(
-        'block bg-zinc-900 border rounded-xl p-6 transition-colors cursor-pointer h-full focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2',
+        'block bg-card border rounded-xl p-6 transition-colors cursor-pointer h-full border-l-4 hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         selected
-          ? 'border-blue-500 ring-1 ring-blue-500/30'
-          : 'border-zinc-800 hover:border-zinc-600'
+          ? 'border-primary ring-1 ring-primary/30'
+          : 'border-border',
+        severityBorder[incident.severity] || 'border-l-muted-foreground'
       )}
       aria-label={`Incident ${incident.id}: ${incident.title}, severity ${incident.severity}, ${incident.event_count} events`}
     >
       {/* Top row */}
       <div className="flex items-center justify-between mb-3">
         <SeverityBadge severity={incident.severity} />
-        <span className="text-xs font-mono text-zinc-400">#{incident.id}</span>
+        <span className="text-xs font-mono text-muted-foreground">#{incident.id}</span>
       </div>
 
       {/* Title */}
-      <h3 className="text-lg font-semibold text-zinc-100 mb-2 line-clamp-1">
+      <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-1">
         {incident.title}
       </h3>
 
       {/* Description */}
-      <p className="text-sm text-zinc-400 line-clamp-2 mb-4">
-        {truncate(incident.description || incident.title, 150)}
+      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+        {incident.description || incident.title}
       </p>
 
       {/* Techniques */}
@@ -53,19 +61,19 @@ export const IncidentCard = memo(function IncidentCard({ incident, selected = fa
           />
         ))}
         {remainingCount > 0 && (
-          <span className="text-xs text-zinc-500 self-center">
+          <span className="text-xs text-muted-foreground self-center">
             +{remainingCount} more
           </span>
         )}
       </div>
 
       {/* Bottom row */}
-      <div className="flex items-center justify-between text-xs text-zinc-400">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
         <time dateTime={incident.start_time}>
           {formatTimestamp(incident.start_time)}
         </time>
         <div className="flex items-center gap-3">
-          <span className="bg-zinc-800 px-2 py-1 rounded">
+          <span className="bg-muted px-2 py-1 rounded">
             {incident.event_count} events
           </span>
           <ConfidenceBadge confidence={incident.confidence} />

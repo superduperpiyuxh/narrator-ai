@@ -64,8 +64,8 @@ export function KillChain({ techniques }: KillChainProps) {
                   flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[110px] max-w-[140px] text-center
                   transition-colors
                   ${isActive
-                    ? 'bg-blue-500/20 border-blue-500 text-blue-300'
-                    : 'bg-zinc-900 border-zinc-800 text-zinc-600'
+                    ? 'bg-primary/20 border-primary text-primary/80'
+                    : 'bg-card border-border text-muted-foreground/60'
                   }
                 `}
               >
@@ -73,7 +73,7 @@ export function KillChain({ techniques }: KillChainProps) {
                   {phase.label}
                 </span>
                 {isActive && techIds.length > 0 && (
-                  <span className="mt-1 text-[10px] font-mono text-blue-400/80 leading-tight">
+                  <span className="mt-1 text-[10px] font-mono text-primary/80 leading-tight">
                     {techIds.join(', ')}
                   </span>
                 )}
@@ -83,7 +83,7 @@ export function KillChain({ techniques }: KillChainProps) {
               {!isLast && (
                 <ChevronRight
                   className={`w-4 h-4 flex-shrink-0 mx-0.5 ${
-                    isActive ? 'text-blue-500' : 'text-zinc-700'
+                    isActive ? 'text-primary' : 'text-muted-foreground/60'
                   }`}
                   aria-hidden="true"
                 />

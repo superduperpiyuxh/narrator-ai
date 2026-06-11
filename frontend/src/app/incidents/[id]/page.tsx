@@ -55,24 +55,24 @@ export default function IncidentDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-zinc-400" role="status">Loading incident...</div>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground" role="status">Loading incident...</div>
       </main>
     );
   }
 
   if (!incident && error) {
     return (
-      <div className="min-h-screen bg-zinc-950 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto" id="main-content">
-          <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-200 mb-6">
+          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             Back to Incidents
           </Link>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center" role="alert">
-            <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
-            <h2 className="text-xl font-medium text-zinc-300 mb-2">Incident not found</h2>
-            <p className="text-zinc-500">{error}</p>
+          <div className="bg-card border border-border rounded-xl p-12 text-center" role="alert">
+            <Shield className="w-12 h-12 text-muted-foreground/60 mx-auto mb-4" aria-hidden="true" />
+            <h2 className="text-xl font-medium text-foreground/80 mb-2">Incident not found</h2>
+            <p className="text-muted-foreground">{error}</p>
           </div>
         </div>
       </div>
@@ -82,50 +82,50 @@ export default function IncidentDetailPage() {
   if (!incident) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto" id="main-content">
-        <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-200 mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           Back to Incidents
         </Link>
 
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-zinc-100">{incident.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{incident.title}</h1>
             <SeverityBadge severity={incident.severity} />
-            <span className="text-sm font-mono text-zinc-500">#{incident.id}</span>
+            <span className="text-sm font-mono text-muted-foreground">#{incident.id}</span>
           </div>
-          <p className="text-zinc-400">{incident.description}</p>
+          <p className="text-muted-foreground">{incident.description}</p>
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" role="region" aria-label="Incident metadata">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-            <div className="text-xs text-zinc-500 mb-1">Source IP</div>
-            <div className="font-mono text-sm text-zinc-300">{incident.source_ip}</div>
+          <div className="bg-card border border-border rounded-lg p-3">
+            <div className="text-xs text-muted-foreground mb-1">Source IP</div>
+            <div className="font-mono text-sm text-foreground/80">{incident.source_ip}</div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-            <div className="text-xs text-zinc-500 mb-1">Time Range</div>
-            <div className="text-sm text-zinc-300">
+          <div className="bg-card border border-border rounded-lg p-3">
+            <div className="text-xs text-muted-foreground mb-1">Time Range</div>
+            <div className="text-sm text-foreground/80">
               {incident.start_time ? new Date(incident.start_time).toLocaleString() : '-'}
             </div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-            <div className="text-xs text-zinc-500 mb-1">Events</div>
-            <div className="text-sm text-zinc-300">{incident.event_count}</div>
+          <div className="bg-card border border-border rounded-lg p-3">
+            <div className="text-xs text-muted-foreground mb-1">Events</div>
+            <div className="text-sm text-foreground/80">{incident.event_count}</div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-            <div className="text-xs text-zinc-500 mb-1">Unique Users</div>
-            <div className="text-sm text-zinc-300">{incident.unique_users?.length || 0}</div>
+          <div className="bg-card border border-border rounded-lg p-3">
+            <div className="text-xs text-muted-foreground mb-1">Unique Users</div>
+            <div className="text-sm text-foreground/80">{incident.unique_users?.length || 0}</div>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-            <div className="text-xs text-zinc-500 mb-1">Unique IPs</div>
-            <div className="text-sm text-zinc-300">{incident.unique_ips?.length || 0}</div>
+          <div className="bg-card border border-border rounded-lg p-3">
+            <div className="text-xs text-muted-foreground mb-1">Unique IPs</div>
+            <div className="text-sm text-foreground/80">{incident.unique_ips?.length || 0}</div>
           </div>
         </div>
 
         {incident.techniques && incident.techniques.length > 0 && (
           <section className="mb-6">
-            <h2 className="text-sm font-medium text-zinc-400 mb-3">MITRE ATT&CK Techniques</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">MITRE ATT&CK Techniques</h2>
             <div className="flex flex-wrap gap-2">
               {incident.techniques.map((tech) => (
                 <TechniqueBadge
@@ -140,8 +140,8 @@ export default function IncidentDetailPage() {
 
         {incident.techniques && incident.techniques.length > 0 && (
           <section className="mb-6">
-            <h2 className="text-sm font-medium text-zinc-400 mb-3">Kill Chain</h2>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">Kill Chain</h2>
+            <div className="bg-card border border-border rounded-xl p-4">
               <KillChain techniques={incident.techniques} />
             </div>
           </section>
@@ -151,8 +151,8 @@ export default function IncidentDetailPage() {
           <button
             onClick={() => setActiveView('narrative')}
             className={activeView === 'narrative'
-              ? 'px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-100 border border-zinc-700'
-              : 'px-4 py-2 text-sm font-medium rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors'
+              ? 'px-4 py-2 text-sm font-medium rounded-lg bg-surface text-foreground border border-border'
+              : 'px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground/80 hover:bg-card transition-colors'
             }
             role="tab"
             aria-selected={activeView === 'narrative'}
@@ -163,8 +163,8 @@ export default function IncidentDetailPage() {
           <button
             onClick={() => setActiveView('timeline')}
             className={activeView === 'timeline'
-              ? 'px-4 py-2 text-sm font-medium rounded-lg bg-zinc-800 text-zinc-100 border border-zinc-700'
-              : 'px-4 py-2 text-sm font-medium rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors'
+              ? 'px-4 py-2 text-sm font-medium rounded-lg bg-surface text-foreground border border-border'
+              : 'px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground/80 hover:bg-card transition-colors'
             }
             role="tab"
             aria-selected={activeView === 'timeline'}
@@ -182,10 +182,10 @@ export default function IncidentDetailPage() {
             {narrative ? (
               <StoryCard narrative={narrative} incidentId={incidentId} existingFeedback={feedback} />
             ) : (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
-                <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
-                <h3 className="text-lg font-medium text-zinc-300 mb-2">No narrative generated</h3>
-                <p className="text-zinc-500 mb-6">
+              <div className="bg-card border border-border rounded-xl p-12 text-center">
+                <Shield className="w-12 h-12 text-muted-foreground/60 mx-auto mb-4" aria-hidden="true" />
+                <h3 className="text-lg font-medium text-foreground/80 mb-2">No narrative generated</h3>
+                <p className="text-muted-foreground mb-6">
                   Generate an AI narrative for this incident to see the attack story.
                 </p>
                 <GenerateNarrativeButton incidentId={incidentId} onGenerated={loadNarrative} />
@@ -196,21 +196,21 @@ export default function IncidentDetailPage() {
 
         {activeView === 'timeline' && (
           <div id="timeline-panel" role="tabpanel" aria-label="Timeline view">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               <button
                 onClick={() => setTimelineOpen(!timelineOpen)}
-                className="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/50 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface/50 transition-colors"
                 aria-expanded={timelineOpen}
                 aria-controls="timeline-content"
               >
                 <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-zinc-400" aria-hidden="true" />
-                  <h3 className="text-lg font-semibold text-zinc-100">Event Timeline</h3>
+                  <Clock className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+                  <h3 className="text-lg font-semibold text-foreground">Event Timeline</h3>
                 </div>
                 {timelineOpen ? (
-                  <ChevronUp className="w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <ChevronUp className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                 )}
               </button>
               {timelineOpen && (

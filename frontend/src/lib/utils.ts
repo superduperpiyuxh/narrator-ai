@@ -1,7 +1,8 @@
 import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 export function formatTimestamp(ts: string): string {
@@ -69,4 +70,37 @@ export function getConfidenceColor(score: number): string {
 export function truncate(str: string, length: number): string {
   if (str.length <= length) return str;
   return str.slice(0, length) + '...';
+}
+
+export function getSeverityBorder(severity: string): string {
+  switch (severity.toLowerCase()) {
+    case 'critical':
+      return 'border-l-severity-critical';
+    case 'high':
+      return 'border-l-severity-high';
+    case 'medium':
+      return 'border-l-severity-medium';
+    case 'low':
+      return 'border-l-severity-low';
+    default:
+      return 'border-l-muted';
+  }
+}
+
+export function getEventColor(eventType: string): string {
+  const normalized = eventType.toLowerCase().replace(/[_-]/g, '');
+  if (normalized.includes('auth') || normalized.includes('login')) return 'text-event-auth';
+  if (normalized.includes('process')) return 'text-event-process';
+  if (normalized.includes('network') || normalized.includes('dns')) return 'text-event-network';
+  if (normalized.includes('file')) return 'text-event-file';
+  return 'text-muted-foreground';
+}
+
+export function getEventDot(eventType: string): string {
+  const normalized = eventType.toLowerCase().replace(/[_-]/g, '');
+  if (normalized.includes('auth') || normalized.includes('login')) return 'bg-event-auth';
+  if (normalized.includes('process')) return 'bg-event-process';
+  if (normalized.includes('network') || normalized.includes('dns')) return 'bg-event-network';
+  if (normalized.includes('file')) return 'bg-event-file';
+  return 'bg-muted-foreground';
 }

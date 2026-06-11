@@ -59,56 +59,56 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-400" role="status" aria-label="Loading settings">Loading...</div>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground" role="status" aria-label="Loading settings">Loading...</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 p-4 md:p-8">
+    <main className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white">Settings</h1>
-            <p className="text-gray-400 mt-1">{email}</p>
+            <p className="text-muted-foreground mt-1">{email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors text-sm"
+            className="px-4 py-2 bg-surface hover:bg-surface-hover text-foreground rounded transition-colors text-sm"
           >
             Sign Out
           </button>
         </div>
 
         <div className="space-y-6">
-          <section className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <section className="bg-card rounded-lg p-6 border border-border">
             <h2 className="text-lg font-semibold text-white mb-4">API Access</h2>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Use this API key to send events to Nexus from your SIEM or other tools.
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 px-3 py-2 bg-gray-800 rounded text-green-400 text-sm font-mono break-all">
+              <code className="flex-1 px-3 py-2 bg-surface rounded text-success text-sm font-mono break-all">
                 {apiKey}
               </code>
               <button
                 onClick={copyApiKey}
-                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm whitespace-nowrap"
+                className="px-3 py-2 bg-surface-hover hover:bg-surface-active text-foreground rounded text-sm whitespace-nowrap"
               >
                 Copy
               </button>
             </div>
           </section>
 
-          <section className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <section className="bg-card rounded-lg p-6 border border-border">
             <h2 className="text-lg font-semibold text-white mb-4">OpenRouter API Key</h2>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Provide your own OpenRouter API key to generate narratives. Get a free key at{' '}
               <a
                 href="https://openrouter.ai/keys"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300"
+                className="text-primary hover:text-primary/80"
               >
                 openrouter.ai/keys
               </a>
@@ -116,12 +116,12 @@ export default function SettingsPage() {
 
             <form onSubmit={handleSave}>
               {message && (
-                <div className="mb-4 p-3 bg-green-900/50 border border-green-700 rounded text-green-200 text-sm" role="status">
+                <div className="mb-4 p-3 bg-success/10 border border-success/30 rounded text-success text-sm" role="status">
                   {message}
                 </div>
               )}
               {error && (
-                <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm" role="alert">
+                <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm" role="alert">
                   {error}
                 </div>
               )}
@@ -132,7 +132,7 @@ export default function SettingsPage() {
                   value={openrouterKey}
                   onChange={(e) => setOpenrouterKey(e.target.value)}
                   placeholder="sk-or-v1-..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   aria-label="OpenRouter API Key"
                 />
               </div>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-medium rounded transition-colors"
+                className="w-full py-2 px-4 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-medium rounded transition-colors"
               >
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>

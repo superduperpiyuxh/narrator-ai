@@ -42,22 +42,22 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white">Nexus</h1>
-          <p className="text-gray-400 mt-2">Create your account</p>
+          <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-gray-900 rounded-lg p-6 shadow-xl border border-gray-800">
+        <form onSubmit={handleSubmit} className="bg-card rounded-lg p-6 shadow-xl border border-border">
           {error && (
-            <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm" role="alert">
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm" role="alert">
               {error}
             </div>
           )}
 
           <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
               Email
             </label>
             <input
@@ -66,12 +66,12 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-surface border border-border rounded text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
               Password
             </label>
             <input
@@ -81,12 +81,12 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-surface border border-border rounded text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1">
               Confirm Password
             </label>
             <input
@@ -96,21 +96,21 @@ export default function SignupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-surface border border-border rounded text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-medium rounded transition-colors"
+            className="w-full py-2 px-4 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-medium rounded transition-colors"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
 
-          <p className="mt-4 text-center text-sm text-gray-400">
+          <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/login" className="text-blue-400 hover:text-blue-300">
+            <Link href="/login" className="text-primary hover:text-primary/80">
               Sign in
             </Link>
           </p>

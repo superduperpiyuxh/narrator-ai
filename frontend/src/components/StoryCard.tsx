@@ -40,14 +40,14 @@ export function StoryCard({ narrative, incidentId, existingFeedback }: StoryCard
   return (
     <div className="flex gap-6">
       {/* Main story card */}
-      <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="flex-1 bg-card border border-border rounded-xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-800">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-zinc-100">Attack Narrative</h3>
+            <h3 className="text-lg font-semibold text-foreground">Attack Narrative</h3>
             <div className="flex items-center gap-3">
               <ConfidenceBadge confidence={narrative.confidence} />
-              <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">
+              <span className="text-xs text-muted-foreground bg-surface px-2 py-1 rounded">
                 {narrative.model_used}
               </span>
             </div>
@@ -56,8 +56,8 @@ export function StoryCard({ narrative, incidentId, existingFeedback }: StoryCard
 
         {/* Summary */}
         {narrative.summary && (
-          <div className="px-6 py-4 border-b border-zinc-800">
-            <p className="text-sm text-zinc-300 italic">{narrative.summary}</p>
+          <div className="px-6 py-4 border-b border-border">
+            <p className="text-sm text-foreground/80 italic">{narrative.summary}</p>
           </div>
         )}
 
@@ -75,14 +75,14 @@ export function StoryCard({ narrative, incidentId, existingFeedback }: StoryCard
               />
             ))
           ) : (
-            <p className="text-zinc-500 text-sm">No sentences available</p>
+            <p className="text-muted-foreground text-sm">No sentences available</p>
           )}
         </div>
 
         {/* Metadata footer */}
-        <div className="px-6 py-3 border-t border-zinc-800 bg-zinc-950/50">
+        <div className="px-6 py-3 border-t border-border bg-background/50">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
+            <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
               <span>{narrative.tokens_used.toLocaleString()} tokens</span>
               <span>{narrative.generation_time_ms}ms</span>
               <span>T={narrative.temperature}</span>
@@ -100,7 +100,7 @@ export function StoryCard({ narrative, incidentId, existingFeedback }: StoryCard
       {/* Source events panel */}
       <div className="w-80 flex-shrink-0">
         <div className="sticky top-4">
-          <h4 className="text-sm font-medium text-zinc-400 mb-3">Source Events</h4>
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Source Events</h4>
           <RawEventViewer
             eventIds={selectedEventIds}
             narrativeId={narrative.id}

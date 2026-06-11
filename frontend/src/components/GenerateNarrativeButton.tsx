@@ -44,7 +44,7 @@ export function GenerateNarrativeButton({ incidentId, onGenerated }: GenerateNar
     <button
       onClick={handleGenerate}
       disabled={isGenerating}
-      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-400 text-white rounded-lg font-medium transition-colors"
+      className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 disabled:bg-surface-hover disabled:text-muted-foreground text-white rounded-lg font-medium transition-colors"
       aria-label={`Generate AI narrative for incident ${incidentId}`}
       aria-busy={isGenerating}
     >

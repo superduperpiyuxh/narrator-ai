@@ -42,8 +42,8 @@ export function NarrativeSentence({
       className={cn(
         'p-3 rounded-lg cursor-pointer transition-all duration-150',
         isHovered
-          ? 'bg-zinc-800 border-l-2 border-blue-500 text-zinc-50'
-          : 'text-zinc-200 hover:bg-zinc-800/50'
+          ? 'bg-surface border-l-2 border-primary text-foreground'
+          : 'text-foreground/80 hover:bg-surface/50'
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -59,7 +59,7 @@ export function NarrativeSentence({
     >
       <p className="text-sm leading-relaxed">{sentence.text}</p>
       <div className="flex items-center gap-3 mt-2">
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-muted-foreground">
           {formatTimestamp(sentence.timestamp)}
         </span>
         {sentence.technique && (
