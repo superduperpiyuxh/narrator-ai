@@ -65,6 +65,12 @@ export default function HomePage() {
           fetch(`${API_BASE}/api/incidents/stats`, { headers }),
         ]);
 
+        if (incRes.status === 401 || statsRes.status === 401) {
+          clearToken();
+          router.push('/login');
+          return;
+        }
+
         if (incRes.ok) {
           const data = await incRes.json();
           setIncidents(data.incidents || []);

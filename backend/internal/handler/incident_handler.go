@@ -23,6 +23,8 @@ func NewIncidentHandler(db *database.DB) *IncidentHandler {
 func (h *IncidentHandler) GroupIncidents(c *gin.Context) {
 	start := time.Now()
 
+	userID := auth.GetUserID(c)
+
 	events, err := h.db.GetUnprocessedEvents()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -48,6 +50,7 @@ func (h *IncidentHandler) GroupIncidents(c *gin.Context) {
 	incidentsCreated := 0
 	for _, group := range groups {
 		inc := incident.BuildIncidentFromGroup(group)
+		inc.UserID = userID
 		eventIDs := make([]int64, len(group))
 		for i, e := range group {
 			eventIDs[i] = e.ID

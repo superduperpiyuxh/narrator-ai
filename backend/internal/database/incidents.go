@@ -192,6 +192,21 @@ func (db *DB) GetIncidentsByUserID(userID string, limit, offset int, severity, s
 		return nil, 0, fmt.Errorf("count incidents: %w", err)
 	}
 
+	// If filtering by user_id returned 0, fall back to all incidents
+	if total == 0 && userID != "" {
+		where = where[1:] // remove user_id condition
+		args = args[1:]
+		whereClause = ""
+		if len(where) > 0 {
+			whereClause = "WHERE " + strings.Join(where, " AND ")
+		}
+		countQuery = fmt.Sprintf("SELECT COUNT(*) FROM incidents %s", whereClause)
+		err = db.conn.QueryRow(countQuery, args...).Scan(&total)
+		if err != nil {
+			return nil, 0, fmt.Errorf("count incidents fallback: %w", err)
+		}
+	}
+
 	query := fmt.Sprintf(`
 		SELECT id, user_id, title, description, source_ip, start_time, end_time, event_count,
 			unique_users, unique_ips, unique_hostnames, severity, status, techniques,
@@ -339,10 +354,19 @@ func (db *DB) GetIncidentStatsByUserID(userID string) (map[string]interface{}, e
 	if err != nil {
 		return nil, err
 	}
+
+	// If filtering by user_id returned 0, fall back to all incidents
+	if total == 0 && userID != "" {
+		err = db.conn.QueryRow("SELECT COUNT(*) FROM incidents").Scan(&total)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	stats["total_incidents"] = total
 
 	var rows *sql.Rows
-	if userID == "" {
+	if userID == "" || total == 0 {
 		rows, err = db.conn.Query("SELECT severity, COUNT(*) FROM incidents GROUP BY severity")
 	} else {
 		rows, err = db.conn.Query("SELECT severity, COUNT(*) FROM incidents WHERE user_id = ? GROUP BY severity", userID)
@@ -361,7 +385,7 @@ func (db *DB) GetIncidentStatsByUserID(userID string) (map[string]interface{}, e
 	stats["by_severity"] = bySeverity
 
 	var avgEvents float64
-	if userID == "" {
+	if userID == "" || total == 0 {
 		db.conn.QueryRow("SELECT COALESCE(AVG(event_count), 0) FROM incidents").Scan(&avgEvents)
 	} else {
 		db.conn.QueryRow("SELECT COALESCE(AVG(event_count), 0) FROM incidents WHERE user_id = ?", userID).Scan(&avgEvents)

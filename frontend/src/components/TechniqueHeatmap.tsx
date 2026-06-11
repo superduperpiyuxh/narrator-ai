@@ -67,6 +67,12 @@ export function TechniqueHeatmap() {
           fetch(`${API_BASE}/api/incidents?limit=1000`, { headers }),
         ]);
 
+        if (techRes.status === 401 || incRes.status === 401) {
+          localStorage.removeItem('nexus_token');
+          window.location.href = '/login';
+          return;
+        }
+
         if (!techRes.ok) {
           if (!cancelled) {
             setError('Failed to load techniques');
