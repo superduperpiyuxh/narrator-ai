@@ -102,15 +102,28 @@ func (db *DB) GetEvents(limit, offset int) ([]Event, int, error) {
 
 func (db *DB) GetEventsByUserID(userID string, limit, offset int) ([]Event, int, error) {
 	var total int
-	err := db.conn.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM events WHERE user_id = ?", userID).Scan(&total)
+	var err error
+	if userID == "" {
+		err = db.conn.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM events").Scan(&total)
+	} else {
+		err = db.conn.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM events WHERE user_id = ?", userID).Scan(&total)
+	}
 	if err != nil {
 		return nil, 0, fmt.Errorf("count events: %w", err)
 	}
 
-	rows, err := db.conn.QueryContext(context.Background(), `
-		SELECT `+selectColumns+`
-		FROM events WHERE user_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?
-	`, userID, limit, offset)
+	var rows *sql.Rows
+	if userID == "" {
+		rows, err = db.conn.QueryContext(context.Background(), `
+			SELECT `+selectColumns+`
+			FROM events ORDER BY timestamp DESC LIMIT ? OFFSET ?
+		`, limit, offset)
+	} else {
+		rows, err = db.conn.QueryContext(context.Background(), `
+			SELECT `+selectColumns+`
+			FROM events WHERE user_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?
+		`, userID, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, fmt.Errorf("query events: %w", err)
 	}
@@ -162,13 +175,25 @@ func (db *DB) SearchEvents(query string) ([]Event, error) {
 
 func (db *DB) SearchEventsByUserID(userID, query string) ([]Event, error) {
 	like := "%" + query + "%"
-	rows, err := db.conn.QueryContext(context.Background(), `
-		SELECT `+selectColumns+`
-		FROM events 
-		WHERE user_id = ? AND (hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
-		   OR source_ip LIKE ? OR command_line LIKE ?)
-		ORDER BY timestamp DESC LIMIT 100
-	`, userID, like, like, like, like, like)
+	var rows *sql.Rows
+	var err error
+	if userID == "" {
+		rows, err = db.conn.QueryContext(context.Background(), `
+			SELECT `+selectColumns+`
+			FROM events 
+			WHERE hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
+			   OR source_ip LIKE ? OR command_line LIKE ?
+			ORDER BY timestamp DESC LIMIT 100
+		`, like, like, like, like, like)
+	} else {
+		rows, err = db.conn.QueryContext(context.Background(), `
+			SELECT `+selectColumns+`
+			FROM events 
+			WHERE user_id = ? AND (hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
+			   OR source_ip LIKE ? OR command_line LIKE ?)
+			ORDER BY timestamp DESC LIMIT 100
+		`, userID, like, like, like, like, like)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -226,21 +251,39 @@ func (db *DB) GetStatsByUserID(userID string) (map[string]interface{}, error) {
 	ctx := context.Background()
 
 	var count int
-	if err := db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM events WHERE user_id = ?", userID).Scan(&count); err != nil {
+	var err error
+	if userID == "" {
+		err = db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM events").Scan(&count)
+	} else {
+		err = db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM events WHERE user_id = ?", userID).Scan(&count)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("count events: %w", err)
 	}
 	stats["total_events"] = count
 
 	var hosts int
-	db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT hostname) FROM events WHERE user_id = ?", userID).Scan(&hosts)
+	if userID == "" {
+		db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT hostname) FROM events").Scan(&hosts)
+	} else {
+		db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT hostname) FROM events WHERE user_id = ?", userID).Scan(&hosts)
+	}
 	stats["unique_hosts"] = hosts
 
 	var ipCount int
-	db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT source_ip) FROM events WHERE user_id = ?", userID).Scan(&ipCount)
+	if userID == "" {
+		db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT source_ip) FROM events").Scan(&ipCount)
+	} else {
+		db.conn.QueryRowContext(ctx, "SELECT COUNT(DISTINCT source_ip) FROM events WHERE user_id = ?", userID).Scan(&ipCount)
+	}
 	stats["unique_ips"] = ipCount
 
 	var incidents int
-	db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM incidents WHERE user_id = ?", userID).Scan(&incidents)
+	if userID == "" {
+		db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM incidents").Scan(&incidents)
+	} else {
+		db.conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM incidents WHERE user_id = ?", userID).Scan(&incidents)
+	}
 	stats["total_incidents"] = incidents
 
 	return stats, nil

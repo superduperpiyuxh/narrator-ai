@@ -160,9 +160,13 @@ func (db *DB) GetIncidents(limit, offset int, severity, status, sourceIP string)
 }
 
 func (db *DB) GetIncidentsByUserID(userID string, limit, offset int, severity, status, sourceIP string) ([]Incident, int, error) {
-	where := []string{"user_id = ?"}
-	args := []interface{}{userID}
+	where := []string{}
+	args := []interface{}{}
 
+	if userID != "" {
+		where = append(where, "user_id = ?")
+		args = append(args, userID)
+	}
 	if severity != "" {
 		where = append(where, "severity = ?")
 		args = append(args, severity)
@@ -176,7 +180,10 @@ func (db *DB) GetIncidentsByUserID(userID string, limit, offset int, severity, s
 		args = append(args, sourceIP)
 	}
 
-	whereClause := "WHERE " + strings.Join(where, " AND ")
+	whereClause := ""
+	if len(where) > 0 {
+		whereClause = "WHERE " + strings.Join(where, " AND ")
+	}
 
 	var total int
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM incidents %s", whereClause)
@@ -323,13 +330,23 @@ func (db *DB) GetIncidentStatsByUserID(userID string) (map[string]interface{}, e
 	stats := map[string]interface{}{}
 
 	var total int
-	err := db.conn.QueryRow("SELECT COUNT(*) FROM incidents WHERE user_id = ?", userID).Scan(&total)
+	var err error
+	if userID == "" {
+		err = db.conn.QueryRow("SELECT COUNT(*) FROM incidents").Scan(&total)
+	} else {
+		err = db.conn.QueryRow("SELECT COUNT(*) FROM incidents WHERE user_id = ?", userID).Scan(&total)
+	}
 	if err != nil {
 		return nil, err
 	}
 	stats["total_incidents"] = total
 
-	rows, err := db.conn.Query("SELECT severity, COUNT(*) FROM incidents WHERE user_id = ? GROUP BY severity", userID)
+	var rows *sql.Rows
+	if userID == "" {
+		rows, err = db.conn.Query("SELECT severity, COUNT(*) FROM incidents GROUP BY severity")
+	} else {
+		rows, err = db.conn.Query("SELECT severity, COUNT(*) FROM incidents WHERE user_id = ? GROUP BY severity", userID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +361,11 @@ func (db *DB) GetIncidentStatsByUserID(userID string) (map[string]interface{}, e
 	stats["by_severity"] = bySeverity
 
 	var avgEvents float64
-	db.conn.QueryRow("SELECT COALESCE(AVG(event_count), 0) FROM incidents WHERE user_id = ?", userID).Scan(&avgEvents)
+	if userID == "" {
+		db.conn.QueryRow("SELECT COALESCE(AVG(event_count), 0) FROM incidents").Scan(&avgEvents)
+	} else {
+		db.conn.QueryRow("SELECT COALESCE(AVG(event_count), 0) FROM incidents WHERE user_id = ?", userID).Scan(&avgEvents)
+	}
 	stats["avg_events_per_incident"] = avgEvents
 
 	return stats, nil
