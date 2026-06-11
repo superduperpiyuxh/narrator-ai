@@ -107,3 +107,138 @@ func TestChatNoChoices(t *testing.T) {
 		t.Fatal("expected error for no choices")
 	}
 }
+
+func TestModelRotation(t *testing.T) {
+	var requestedModels []string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req ChatRequest
+		json.NewDecoder(r.Body).Decode(&req)
+		requestedModels = append(requestedModels, req.Model)
+
+		resp := ChatResponse{
+			Choices: []struct {
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+			}{
+				{Message: struct {
+					Content string `json:"content"`
+				}{Content: "ok"}},
+			},
+			Usage: struct {
+				TotalTokens int `json:"total_tokens"`
+			}{TotalTokens: 10},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	client := &Client{
+		apiKey:     "test-key",
+		httpClient: server.Client(),
+		models:     []string{"model-a", "model-b", "model-c"},
+	}
+
+	for i := 0; i < 6; i++ {
+		client.ChatWithServer(server.URL, []Message{{Role: "user", Content: "test"}}, 0.2, 10)
+	}
+
+	// Should rotate: a, b, c, a, b, c
+	expected := []string{"model-a", "model-b", "model-c", "model-a", "model-b", "model-c"}
+	for i, want := range expected {
+		if requestedModels[i] != want {
+			t.Errorf("request %d: expected %s, got %s", i, want, requestedModels[i])
+		}
+	}
+}
+
+func TestChatWithServer_Headers(t *testing.T) {
+	var headersReceived map[string]string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		headersReceived = map[string]string{
+			"Authorization": r.Header.Get("Authorization"),
+			"HTTP-Referer":  r.Header.Get("HTTP-Referer"),
+			"X-Title":       r.Header.Get("X-Title"),
+			"Content-Type":  r.Header.Get("Content-Type"),
+		}
+
+		resp := ChatResponse{
+			Choices: []struct {
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+			}{
+				{Message: struct {
+					Content string `json:"content"`
+				}{Content: "ok"}},
+			},
+			Usage: struct {
+				TotalTokens int `json:"total_tokens"`
+			}{TotalTokens: 5},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	client := NewClient("my-api-key")
+	client.httpClient = server.Client()
+
+	client.ChatWithServer(server.URL, []Message{{Role: "user", Content: "test"}}, 0.5, 50)
+
+	if headersReceived["Authorization"] != "Bearer my-api-key" {
+		t.Errorf("expected Bearer my-api-key, got %s", headersReceived["Authorization"])
+	}
+	if headersReceived["HTTP-Referer"] != "https://narrator-ai.dev" {
+		t.Errorf("expected narrator-ai.dev referer, got %s", headersReceived["HTTP-Referer"])
+	}
+	if headersReceived["X-Title"] != "NarratorAI" {
+		t.Errorf("expected NarratorAI title, got %s", headersReceived["X-Title"])
+	}
+	if headersReceived["Content-Type"] != "application/json" {
+		t.Errorf("expected application/json, got %s", headersReceived["Content-Type"])
+	}
+}
+
+func TestChatWithServer_InvalidJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("not valid json at all"))
+	}))
+	defer server.Close()
+
+	client := &Client{
+		apiKey:     "test-key",
+		httpClient: server.Client(),
+		models:     []string{"test-model"},
+	}
+
+	_, _, err := client.ChatWithServer(server.URL, []Message{{Role: "user", Content: "test"}}, 0.2, 10)
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+}
+
+func TestNewClient_Models(t *testing.T) {
+	client := NewClient("key")
+	if len(client.models) != 3 {
+		t.Errorf("expected 3 models, got %d", len(client.models))
+	}
+	if client.models[0] != "openai/gpt-4o-mini" {
+		t.Errorf("expected gpt-4o-mini, got %s", client.models[0])
+	}
+}
+
+func TestNextModel_RoundRobin(t *testing.T) {
+	client := &Client{
+		models: []string{"a", "b", "c"},
+	}
+
+	for i := 0; i < 6; i++ {
+		model := client.nextModel()
+		expected := []string{"a", "b", "c", "a", "b", "c"}[i]
+		if model != expected {
+			t.Errorf("iteration %d: expected %s, got %s", i, expected, model)
+		}
+	}
+}

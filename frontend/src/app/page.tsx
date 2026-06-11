@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { API_BASE, isAuthenticated, clearToken } from '@/lib/api';
+import { isAuthenticated, clearToken, fetchIncidents, fetchIncidentStats } from '@/lib/api';
 import { IncidentCard } from '@/components/IncidentCard';
 import { DashboardControls, type DashboardControlsHandle } from '@/components/DashboardControls';
 import { KeyboardShortcutsModal } from '@/components/KeyboardShortcutsModal';
@@ -11,14 +11,23 @@ import { Shield, Keyboard } from 'lucide-react';
 import { TechniqueHeatmap } from '@/components/TechniqueHeatmap';
 import type { Incident, IncidentStats } from '@/lib/types';
 
-function getHeaders() {
-  const token = localStorage.getItem('nexus_token');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
+export default function HomePage() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <HomePageContent />
+    </Suspense>
+  );
 }
 
-export default function HomePage() {
+function LoadingSkeleton() {
+  return (
+    <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="text-zinc-400" role="status">Loading dashboard...</div>
+    </main>
+  );
+}
+
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -32,7 +41,6 @@ export default function HomePage() {
   const [sourceIP, setSourceIP] = useState(searchParams.get('source_ip') || '');
   const limit = 24;
 
-  // Sync filter state from URL search params (for browser back/forward)
   useEffect(() => {
     const sev = searchParams.get('severity') || '';
     const st = searchParams.get('status') || '';
@@ -51,34 +59,15 @@ export default function HomePage() {
 
   useEffect(() => {
     const loadData = async () => {
-      const headers = getHeaders();
       try {
-        const params = new URLSearchParams();
-        params.set('limit', String(limit));
-        params.set('offset', String((page - 1) * limit));
-        if (severity) params.set('severity', severity);
-        if (status) params.set('status', status);
-        if (sourceIP) params.set('source_ip', sourceIP);
-
+        const offset = (page - 1) * limit;
         const [incRes, statsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/incidents?${params.toString()}`, { headers }),
-          fetch(`${API_BASE}/api/incidents/stats`, { headers }),
+          fetchIncidents(limit, offset, severity || undefined, status || undefined, sourceIP || undefined),
+          fetchIncidentStats(),
         ]);
-
-        if (incRes.status === 401 || statsRes.status === 401) {
-          clearToken();
-          router.push('/login');
-          return;
-        }
-
-        if (incRes.ok) {
-          const data = await incRes.json();
-          setIncidents(data.incidents || []);
-          setTotal(data.total);
-        }
-        if (statsRes.ok) {
-          setStats(await statsRes.json());
-        }
+        setIncidents(incRes.incidents || []);
+        setTotal(incRes.total);
+        setStats(statsRes);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
       } finally {
@@ -88,15 +77,12 @@ export default function HomePage() {
     loadData();
   }, [page, severity, status, sourceIP]);
 
-  // Reset selected index when incidents change
   useEffect(() => {
     setSelectedIndex(-1);
   }, [incidents]);
 
-  // Keyboard shortcuts handler
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Don't handle shortcuts when typing in input fields
       const target = e.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
@@ -104,7 +90,6 @@ export default function HomePage() {
         target.tagName === 'SELECT' ||
         target.isContentEditable
       ) {
-        // Allow Escape to blur input fields
         if (e.key === 'Escape') {
           (target as HTMLElement).blur();
           dashboardControlsRef.current?.clearSearch();
@@ -112,7 +97,6 @@ export default function HomePage() {
         return;
       }
 
-      // Handle modal open state
       if (showShortcuts) {
         if (e.key === 'Escape' || e.key === '?') {
           setShowShortcuts(false);
@@ -121,7 +105,6 @@ export default function HomePage() {
         return;
       }
 
-      // Handle pending g key for go-to shortcuts
       if (pendingKey === 'g') {
         setPendingKey(null);
         if (e.key === 'h') {
@@ -134,7 +117,6 @@ export default function HomePage() {
         return;
       }
 
-      // Single key shortcuts
       switch (e.key) {
         case '/':
           e.preventDefault();
@@ -182,11 +164,7 @@ export default function HomePage() {
   };
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-zinc-400" role="status">Loading dashboard...</div>
-      </main>
-    );
+    return <LoadingSkeleton />;
   }
 
   const totalPages = Math.ceil(total / limit);

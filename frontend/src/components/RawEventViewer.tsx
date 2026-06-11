@@ -5,12 +5,13 @@ import useSWR from 'swr';
 import { Event } from '@/lib/types';
 import { Crosshair, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatTimestamp, cn } from '@/lib/utils';
+import { API_BASE } from '@/lib/api';
 
 const fetcher = (url: string) => {
   const token = localStorage.getItem('nexus_token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { headers }).then((res) => res.json());
+  return fetch(`${API_BASE}${url}`, { headers }).then((res) => res.json());
 };
 
 interface RawEventViewerProps {

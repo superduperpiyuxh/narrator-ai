@@ -158,47 +158,101 @@ func (db *DB) GetEventsByType(eventType string) ([]Event, error) {
 }
 
 func (db *DB) SearchEvents(query string) ([]Event, error) {
+	events, _, err := db.SearchEventsPaginated(query, 100, 0)
+	return events, err
+}
+
+func (db *DB) SearchEventsPaginated(query string, limit, offset int) ([]Event, int, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
 	like := "%" + query + "%"
+
+	var total int
+	err := db.conn.QueryRowContext(context.Background(), `
+		SELECT COUNT(*) FROM events
+		WHERE hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ?
+		   OR source_ip LIKE ? OR command_line LIKE ?
+	`, like, like, like, like, like).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := db.conn.QueryContext(context.Background(), `
 		SELECT `+selectColumns+`
 		FROM events 
 		WHERE hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
 		   OR source_ip LIKE ? OR command_line LIKE ?
-		ORDER BY timestamp DESC LIMIT 100
-	`, like, like, like, like, like)
+		ORDER BY timestamp DESC LIMIT ? OFFSET ?
+	`, like, like, like, like, like, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
-	return scanEvents(rows)
+	events, err := scanEvents(rows)
+	return events, total, err
 }
 
 func (db *DB) SearchEventsByUserID(userID, query string) ([]Event, error) {
+	events, _, err := db.SearchEventsByUserIDPaginated(userID, query, 1000, 0)
+	return events, err
+}
+
+func (db *DB) SearchEventsByUserIDPaginated(userID, query string, limit, offset int) ([]Event, int, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
 	like := "%" + query + "%"
-	var rows *sql.Rows
+
+	var total int
 	var err error
+	if userID == "" {
+		err = db.conn.QueryRowContext(context.Background(), `
+			SELECT COUNT(*) FROM events
+			WHERE hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ?
+			   OR source_ip LIKE ? OR command_line LIKE ?
+		`, like, like, like, like, like).Scan(&total)
+	} else {
+		err = db.conn.QueryRowContext(context.Background(), `
+			SELECT COUNT(*) FROM events
+			WHERE user_id = ? AND (hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ?
+			   OR source_ip LIKE ? OR command_line LIKE ?)
+		`, userID, like, like, like, like, like).Scan(&total)
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var rows *sql.Rows
 	if userID == "" {
 		rows, err = db.conn.QueryContext(context.Background(), `
 			SELECT `+selectColumns+`
 			FROM events 
 			WHERE hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
 			   OR source_ip LIKE ? OR command_line LIKE ?
-			ORDER BY timestamp DESC LIMIT 100
-		`, like, like, like, like, like)
+			ORDER BY timestamp DESC LIMIT ? OFFSET ?
+		`, like, like, like, like, like, limit, offset)
 	} else {
 		rows, err = db.conn.QueryContext(context.Background(), `
 			SELECT `+selectColumns+`
 			FROM events 
 			WHERE user_id = ? AND (hostname LIKE ? OR event_type LIKE ? OR user_name LIKE ? 
 			   OR source_ip LIKE ? OR command_line LIKE ?)
-			ORDER BY timestamp DESC LIMIT 100
-		`, userID, like, like, like, like, like)
+			ORDER BY timestamp DESC LIMIT ? OFFSET ?
+		`, userID, like, like, like, like, like, limit, offset)
 	}
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
-	return scanEvents(rows)
+	events, err := scanEvents(rows)
+	return events, total, err
 }
 
 func (db *DB) GetStats() (map[string]interface{}, error) {

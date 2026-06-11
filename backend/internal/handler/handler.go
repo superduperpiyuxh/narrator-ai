@@ -65,14 +65,23 @@ func (h *Handler) SearchEvents(c *gin.Context) {
 		return
 	}
 
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if limit <= 0 || limit > 1000 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
 	userID := auth.GetUserID(c)
-	events, err := h.db.SearchEventsByUserID(userID, query)
+	events, total, err := h.db.SearchEventsByUserIDPaginated(userID, query, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"events": events, "total": len(events)})
+	c.JSON(http.StatusOK, gin.H{"events": events, "total": total, "limit": limit, "offset": offset})
 }
 
 func (h *Handler) GetEventsByHost(c *gin.Context) {

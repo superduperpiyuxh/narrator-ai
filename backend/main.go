@@ -40,11 +40,12 @@ func main() {
 	nh := handler.NewNarrativeHandler(db, authSvc, cfg.OpenRouterKey)
 	fh := handler.NewFeedbackHandler(db)
 	ingestH := handler.NewIngestHandler(db, cfg.DataDir)
+	streamH := handler.NewStreamHandler(db)
 
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"},
+		AllowOrigins:     cfg.CORSOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-API-Key"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -92,6 +93,20 @@ func main() {
 
 		protected.POST("/api/v1/ingest", ingestH.IngestEvents)
 		protected.POST("/api/v1/ingest/file", ingestH.IngestFile)
+
+		// Real-time streaming
+		protected.GET("/api/v1/stream", streamH.SSEStream)
+		protected.POST("/api/v1/stream", streamH.IngestStream)
+		protected.POST("/api/v1/event", streamH.IngestSingle)
+		protected.POST("/api/v1/auto-group", func(c *gin.Context) {
+			userID := auth.GetUserID(c)
+			created, err := streamH.AutoGroupIncidents(userID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"incidents_created": created})
+		})
 	}
 
 	srv := &http.Server{

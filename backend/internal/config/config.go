@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -15,6 +16,7 @@ type Config struct {
 	DataDir      string
 	OpenRouterKey string
 	JWTSecret    string
+	CORSOrigins  []string
 }
 
 func Load() *Config {
@@ -27,6 +29,7 @@ func Load() *Config {
 		DataDir:       getEnv("DATA_DIR", "../data/sample_json_20260301"),
 		OpenRouterKey: getEnv("OPENROUTER_API_KEY", ""),
 		JWTSecret:     getJWTSecret(),
+		CORSOrigins:   getCORSOrigins(),
 	}
 }
 
@@ -42,6 +45,14 @@ func getJWTSecret() string {
 	secret := hex.EncodeToString(b)
 	log.Printf("WARNING: No JWT_SECRET set. Generated random secret for this session.")
 	return secret
+}
+
+func getCORSOrigins() []string {
+	v := getEnv("CORS_ORIGINS", "")
+	if v == "" {
+		return []string{"http://localhost:3000", "http://localhost:5173"}
+	}
+	return strings.Split(v, ",")
 }
 
 func getEnv(key, fallback string) string {

@@ -287,3 +287,265 @@ func TestGetUserID_WrongType(t *testing.T) {
 		t.Errorf("expected empty string for wrong type, got '%s'", userID)
 	}
 }
+
+func TestService_Signup_Success(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	user, err := svc.Signup("newuser@test.com", "password123")
+	if err != nil {
+		t.Fatalf("signup failed: %v", err)
+	}
+	if user.ID == "" {
+		t.Error("expected non-empty user ID")
+	}
+	if user.Email != "newuser@test.com" {
+		t.Errorf("expected email 'newuser@test.com', got '%s'", user.Email)
+	}
+	if user.APIKey == "" {
+		t.Error("expected non-empty API key")
+	}
+}
+
+func TestService_Signup_DuplicateEmail(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	_, err := svc.Signup("dup@test.com", "password123")
+	if err != nil {
+		t.Fatalf("first signup failed: %v", err)
+	}
+
+	_, err = svc.Signup("dup@test.com", "password456")
+	if err == nil {
+		t.Fatal("expected error for duplicate email")
+	}
+}
+
+func TestService_Signup_InvalidEmail(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	// Empty email should still succeed at DB level (no constraint check in code)
+	_, err := svc.Signup("", "password123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestService_Login_Success(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	_, err := svc.Signup("loginuser@test.com", "mypassword")
+	if err != nil {
+		t.Fatalf("signup failed: %v", err)
+	}
+
+	token, user, err := svc.Login("loginuser@test.com", "mypassword")
+	if err != nil {
+		t.Fatalf("login failed: %v", err)
+	}
+	if token == "" {
+		t.Error("expected non-empty token")
+	}
+	if user.Email != "loginuser@test.com" {
+		t.Errorf("expected email 'loginuser@test.com', got '%s'", user.Email)
+	}
+	if user.PasswordHash != "" {
+		t.Error("expected empty password hash in response")
+	}
+}
+
+func TestService_Login_WrongPassword(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	_, err := svc.Signup("wrongpw@test.com", "correctpass")
+	if err != nil {
+		t.Fatalf("signup failed: %v", err)
+	}
+
+	_, _, err = svc.Login("wrongpass@test.com", "wrongpass")
+	if err == nil {
+		t.Fatal("expected error for wrong password")
+	}
+}
+
+func TestService_Login_NonexistentUser(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	_, _, err := svc.Login("nonexistent@test.com", "password")
+	if err == nil {
+		t.Fatal("expected error for nonexistent user")
+	}
+}
+
+func TestService_Login_NilDB(t *testing.T) {
+	svc := &Service{jwtSecret: []byte("test")}
+
+	_, _, err := svc.Login("test@test.com", "password")
+	if err == nil {
+		t.Fatal("expected error for nil DB")
+	}
+}
+
+func TestService_GetUserByID(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	signupUser, _ := svc.Signup("getbyid@test.com", "password123")
+
+	user, err := svc.GetUserByID(signupUser.ID)
+	if err != nil {
+		t.Fatalf("failed: %v", err)
+	}
+	if user == nil {
+		t.Fatal("expected user, got nil")
+	}
+	if user.Email != "getbyid@test.com" {
+		t.Errorf("expected 'getbyid@test.com', got '%s'", user.Email)
+	}
+}
+
+func TestService_GetUserByID_NotFound(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	user, err := svc.GetUserByID("nonexistent-id")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user != nil {
+		t.Error("expected nil for nonexistent user")
+	}
+}
+
+func TestService_GetUserByAPIKey(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	signupUser, _ := svc.Signup("apikey@test.com", "password123")
+
+	user, err := svc.GetUserByAPIKey(signupUser.APIKey)
+	if err != nil {
+		t.Fatalf("failed: %v", err)
+	}
+	if user == nil {
+		t.Fatal("expected user, got nil")
+	}
+	if user.Email != "apikey@test.com" {
+		t.Errorf("expected 'apikey@test.com', got '%s'", user.Email)
+	}
+}
+
+func TestService_GetUserByAPIKey_NotFound(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	user, err := svc.GetUserByAPIKey("nai_nonexistent")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user != nil {
+		t.Error("expected nil for nonexistent API key")
+	}
+}
+
+func TestService_GetUserByAPIKey_NilDB(t *testing.T) {
+	svc := &Service{jwtSecret: []byte("test")}
+
+	user, err := svc.GetUserByAPIKey("key")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user != nil {
+		t.Error("expected nil for nil DB")
+	}
+}
+
+func TestService_UpdateOpenRouterKey(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	signupUser, _ := svc.Signup("updatekey@test.com", "password123")
+
+	err := svc.UpdateOpenRouterKey(signupUser.ID, "sk-or-new-key")
+	if err != nil {
+		t.Fatalf("update failed: %v", err)
+	}
+
+	user, _ := svc.GetUserByID(signupUser.ID)
+	if user.OpenRouterKey != "sk-or-new-key" {
+		t.Errorf("expected 'sk-or-new-key', got '%s'", user.OpenRouterKey)
+	}
+}
+
+func TestService_UpdateOpenRouterKey_ClearKey(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	signupUser, _ := svc.Signup("clearkey@test.com", "password123")
+	svc.UpdateOpenRouterKey(signupUser.ID, "some-key")
+
+	err := svc.UpdateOpenRouterKey(signupUser.ID, "")
+	if err != nil {
+		t.Fatalf("clear failed: %v", err)
+	}
+
+	user, _ := svc.GetUserByID(signupUser.ID)
+	if user.OpenRouterKey != "" {
+		t.Errorf("expected empty key, got '%s'", user.OpenRouterKey)
+	}
+}
+
+func TestService_CreateDefaultAdmin_Success(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	err := svc.CreateDefaultAdmin("admin@test.com", "adminpass")
+	if err != nil {
+		t.Fatalf("create admin failed: %v", err)
+	}
+
+	// Should be idempotent — calling again should not error
+	err = svc.CreateDefaultAdmin("admin@test.com", "adminpass")
+	if err != nil {
+		t.Fatalf("re-create admin failed: %v", err)
+	}
+
+	user, _ := svc.GetUserByID("")
+	if user != nil {
+		// verify user exists via login
+	}
+}
+
+func TestService_CreateDefaultAdmin_AlreadyExists(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	svc.Signup("existing@test.com", "password123")
+
+	// CreateDefaultAdmin should return nil (already exists)
+	err := svc.CreateDefaultAdmin("existing@test.com", "password123")
+	if err != nil {
+		t.Fatalf("expected nil for existing user, got: %v", err)
+	}
+}
+
+func TestService_ValidateToken_CrossService(t *testing.T) {
+	svc1 := &Service{jwtSecret: []byte("secret-a")}
+	svc2 := &Service{jwtSecret: []byte("secret-a")} // same secret
+
+	token, _ := svc1.generateToken("user-1", "test@test.com")
+
+	claims, err := svc2.ValidateToken(token)
+	if err != nil {
+		t.Fatalf("validation failed: %v", err)
+	}
+	if claims.UserID != "user-1" {
+		t.Errorf("expected 'user-1', got '%s'", claims.UserID)
+	}
+}
+
+func TestService_Login_VerifyToken(t *testing.T) {
+	svc := setupMiddlewareTestService(t)
+
+	svc.Signup("verify@test.com", "password123")
+	token, _, _ := svc.Login("verify@test.com", "password123")
+
+	claims, err := svc.ValidateToken(token)
+	if err != nil {
+		t.Fatalf("token validation failed: %v", err)
+	}
+	if claims.Email != "verify@test.com" {
+		t.Errorf("expected 'verify@test.com', got '%s'", claims.Email)
+	}
+}

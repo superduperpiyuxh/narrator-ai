@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { Sentence } from '@/lib/types';
 import { TechniqueBadge } from './TechniqueBadge';
 import { ConfidenceBadge } from './ConfidenceBadge';
@@ -10,7 +10,7 @@ interface NarrativeSentenceProps {
   sentence: Sentence;
   index: number;
   isHovered: boolean;
-  onHover: (eventIds: number[]) => void;
+  onHover: (eventIds: number[], index: number) => void;
   onLeave: () => void;
 }
 
@@ -28,8 +28,8 @@ export function NarrativeSentence({
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    onHover(sentence.source_event_ids);
-  }, [sentence.source_event_ids, onHover]);
+    onHover(sentence.source_event_ids, index);
+  }, [sentence.source_event_ids, onHover, index]);
 
   const handleMouseLeave = useCallback(() => {
     timeoutRef.current = setTimeout(() => {
@@ -52,7 +52,7 @@ export function NarrativeSentence({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onHover(sentence.source_event_ids);
+          onHover(sentence.source_event_ids, index);
         }
       }}
       aria-label={`Narrative sentence ${index + 1}: ${sentence.text}`}

@@ -2,9 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
+import { API_BASE } from '@/lib/api';
 import { Feedback } from '@/lib/types';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('nexus_token');

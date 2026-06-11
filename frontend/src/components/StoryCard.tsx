@@ -27,8 +27,8 @@ export function StoryCard({ narrative, incidentId, existingFeedback }: StoryCard
     sentences = [];
   }
 
-  const handleSentenceHover = useCallback((eventIds: number[]) => {
-    setHoveredSentenceIndex(null);
+  const handleSentenceHover = useCallback((eventIds: number[], index: number) => {
+    setHoveredSentenceIndex(index);
     setSelectedEventIds(eventIds);
   }, []);
 

@@ -303,6 +303,11 @@ func (h *IngestHandler) IngestFile(c *gin.Context) {
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("read error: %v", err)})
+		return
+	}
+
 	if len(batch) > 0 {
 		if err := h.db.InsertEvents(batch); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Incident } from '@/lib/types';
 import { SeverityBadge } from './SeverityBadge';
 import { ConfidenceBadge } from './ConfidenceBadge';
@@ -11,7 +12,7 @@ interface IncidentCardProps {
   selected?: boolean;
 }
 
-export function IncidentCard({ incident, selected = false }: IncidentCardProps) {
+export const IncidentCard = memo(function IncidentCard({ incident, selected = false }: IncidentCardProps) {
   const displayTechniques = incident.techniques?.slice(0, 3) || [];
   const remainingCount = (incident.techniques?.length || 0) - 3;
 
@@ -72,4 +73,4 @@ export function IncidentCard({ incident, selected = false }: IncidentCardProps) 
       </div>
     </a>
   );
-}
+});

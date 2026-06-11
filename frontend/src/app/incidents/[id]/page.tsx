@@ -10,15 +10,8 @@ import { GenerateNarrativeButton } from '@/components/GenerateNarrativeButton';
 import { TimelineView } from '@/components/TimelineView';
 import { ArrowLeft, Shield, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { KillChain } from '@/components/KillChain';
-import { API_BASE } from '@/lib/api';
+import { fetchIncident, fetchNarrative, getFeedback } from '@/lib/api';
 import type { Incident, Narrative, Feedback } from '@/lib/types';
-
-function getHeaders() {
-  const token = localStorage.getItem('nexus_token');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
-}
 
 export default function IncidentDetailPage() {
   const params = useParams();
@@ -32,36 +25,25 @@ export default function IncidentDetailPage() {
   const [activeView, setActiveView] = useState<'narrative' | 'timeline'>('narrative');
   const [timelineOpen, setTimelineOpen] = useState(false);
 
-  const fetchNarrative = useCallback(async () => {
-    const headers = getHeaders();
+  const loadNarrative = useCallback(async () => {
     try {
-      const narRes = await fetch(`${API_BASE}/api/incidents/${incidentId}/narrative`, { headers });
-      if (narRes.ok) {
-        const narData = await narRes.json();
-        if (narData.narrative) {
-          setNarrative(narData.narrative);
-          const fbRes = await fetch(`${API_BASE}/api/feedback/${narData.narrative.id}`, { headers });
-          if (fbRes.ok) {
-            const fbData = await fbRes.json();
-            setFeedback(fbData.feedback);
-          }
-        }
+      const narRes = await fetchNarrative(incidentId);
+      if (narRes.narrative) {
+        setNarrative(narRes.narrative);
+        const fbRes = await getFeedback(narRes.narrative.id);
+        setFeedback(fbRes.feedback);
       }
     } catch {
-      // silent - narrative may not exist yet
+      // narrative may not exist yet
     }
   }, [incidentId]);
 
   useEffect(() => {
     const load = async () => {
-      const headers = getHeaders();
       try {
-        const incRes = await fetch(`${API_BASE}/api/incidents/${incidentId}`, { headers });
-        if (!incRes.ok) throw new Error('Failed to load incident');
-        const incData = await incRes.json();
-        setIncident(incData.incident);
-
-        await fetchNarrative();
+        const incRes = await fetchIncident(incidentId);
+        setIncident(incRes.incident);
+        await loadNarrative();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
       } finally {
@@ -69,7 +51,7 @@ export default function IncidentDetailPage() {
       }
     };
     load();
-  }, [incidentId, fetchNarrative]);
+  }, [incidentId, loadNarrative]);
 
   if (loading) {
     return (
@@ -156,7 +138,6 @@ export default function IncidentDetailPage() {
           </section>
         )}
 
-        {/* Kill Chain */}
         {incident.techniques && incident.techniques.length > 0 && (
           <section className="mb-6">
             <h2 className="text-sm font-medium text-zinc-400 mb-3">Kill Chain</h2>
@@ -166,7 +147,6 @@ export default function IncidentDetailPage() {
           </section>
         )}
 
-        {/* View toggle */}
         <div className="flex items-center gap-2 mb-6" role="tablist" aria-label="Incident view">
           <button
             onClick={() => setActiveView('narrative')}
@@ -197,7 +177,6 @@ export default function IncidentDetailPage() {
           </button>
         </div>
 
-        {/* Narrative view */}
         {activeView === 'narrative' && (
           <div id="narrative-panel" role="tabpanel" aria-label="Narrative view">
             {narrative ? (
@@ -209,13 +188,12 @@ export default function IncidentDetailPage() {
                 <p className="text-zinc-500 mb-6">
                   Generate an AI narrative for this incident to see the attack story.
                 </p>
-                <GenerateNarrativeButton incidentId={incidentId} onGenerated={fetchNarrative} />
+                <GenerateNarrativeButton incidentId={incidentId} onGenerated={loadNarrative} />
               </div>
             )}
           </div>
         )}
 
-        {/* Timeline view - collapsible section */}
         {activeView === 'timeline' && (
           <div id="timeline-panel" role="tabpanel" aria-label="Timeline view">
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">

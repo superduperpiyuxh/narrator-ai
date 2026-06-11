@@ -52,11 +52,15 @@ func (h *FeedbackHandler) SubmitFeedback(c *gin.Context) {
 		req.Notes = req.Notes[:1000]
 	}
 
+	userID, _ := c.Get("user_id")
+	userIDStr, _ := userID.(string)
+
 	feedback := &database.Feedback{
 		NarrativeID: req.NarrativeID,
 		IncidentID:  req.IncidentID,
 		Rating:      req.Rating,
 		Notes:       req.Notes,
+		UserID:      userIDStr,
 	}
 
 	if err := h.db.CreateFeedback(feedback); err != nil {
