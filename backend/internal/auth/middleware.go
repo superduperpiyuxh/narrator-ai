@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +14,13 @@ func AuthMiddleware(svc *Service) gin.HandlerFunc {
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
 				claims, err := svc.ValidateToken(parts[1])
-				if err != nil {
-					c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-					c.Abort()
+				if err == nil {
+					c.Set("user_id", claims.UserID)
+					c.Set("user_email", claims.Email)
+					c.Next()
 					return
 				}
-				c.Set("user_id", claims.UserID)
-				c.Set("user_email", claims.Email)
-				c.Next()
-				return
+				// Token invalid/expired — fall through to demo mode
 			}
 		}
 
@@ -31,15 +28,13 @@ func AuthMiddleware(svc *Service) gin.HandlerFunc {
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey != "" {
 			user, err := svc.GetUserByAPIKey(apiKey)
-			if err != nil || user == nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
-				c.Abort()
+			if err == nil && user != nil {
+				c.Set("user_id", user.ID)
+				c.Set("user_email", user.Email)
+				c.Next()
 				return
 			}
-			c.Set("user_id", user.ID)
-			c.Set("user_email", user.Email)
-			c.Next()
-			return
+			// Invalid API key — fall through to demo mode
 		}
 
 		// No auth — pass through in demo mode (user_id = "")

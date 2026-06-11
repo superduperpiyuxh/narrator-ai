@@ -73,7 +73,7 @@ export function TechniqueHeatmap() {
           const incData = await incRes.json();
           const incidents: Incident[] = incData.incidents || [];
           for (const inc of incidents) {
-            for (const t of inc.techniques) {
+            for (const t of inc.techniques || []) {
               techniqueCounts.set(
                 t.technique_id,
                 (techniqueCounts.get(t.technique_id) || 0) + 1

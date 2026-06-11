@@ -29,7 +29,7 @@ func main() {
 	defer db.Close()
 
 	authSvc := auth.NewService(db.Conn(), cfg.JWTSecret)
-	adminPass := generateRandomPassword(16)
+	adminPass := getEnvOrDefault("ADMIN_PASSWORD", "admin123")
 	if err := authSvc.CreateDefaultAdmin("admin@nexus.ai", adminPass); err == nil {
 		log.Printf("Created default admin: admin@nexus.ai / %s", adminPass)
 	}
@@ -73,10 +73,10 @@ func main() {
 		protected.POST("/api/import", h.ImportLocal)
 
 		protected.POST("/api/incidents/group", ih.GroupIncidents)
+		protected.GET("/api/incidents/stats", ih.GetIncidentStats)
 		protected.GET("/api/incidents", ih.GetIncidents)
 		protected.GET("/api/incidents/:id", ih.GetIncident)
 		protected.GET("/api/incidents/:id/events", ih.GetIncidentEvents)
-		protected.GET("/api/incidents/stats", ih.GetIncidentStats)
 		protected.GET("/api/techniques", ih.GetTechniques)
 
 		protected.POST("/api/incidents/:id/narrative", nh.GenerateNarrative)
@@ -125,4 +125,11 @@ func generateRandomPassword(length int) string {
 		log.Fatalf("failed to generate random password: %v", err)
 	}
 	return hex.EncodeToString(b)[:length]
+}
+
+func getEnvOrDefault(key, defaultVal string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return defaultVal
 }
