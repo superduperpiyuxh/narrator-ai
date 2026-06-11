@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -75,7 +76,7 @@ func (h *FeedbackHandler) GetFeedback(c *gin.Context) {
 
 	feedback, err := h.db.GetFeedbackByNarrativeID(narrativeID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusOK, gin.H{"feedback": nil})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve feedback"})

@@ -52,11 +52,11 @@ func (db *DB) CreateIncident(inc *Incident, eventIDs []int64) error {
 	mitreJSON, _ := json.Marshal(inc.MitreAttackIDs)
 
 	result, err := tx.Exec(`
-		INSERT INTO incidents (title, description, source_ip, start_time, end_time, event_count,
+		INSERT INTO incidents (user_id, title, description, source_ip, start_time, end_time, event_count,
 			unique_users, unique_ips, unique_hostnames, severity, status, techniques, tactics,
 			mitre_attack_ids, confidence, raw_summary)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		inc.Title, inc.Description, inc.SourceIP, inc.StartTime, inc.EndTime, inc.EventCount,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		inc.UserID, inc.Title, inc.Description, inc.SourceIP, inc.StartTime, inc.EndTime, inc.EventCount,
 		string(usersJSON), string(ipsJSON), string(hostnamesJSON), inc.Severity, inc.Status,
 		string(techniquesJSON), string(tacticsJSON), string(mitreJSON), inc.Confidence, inc.RawSummary)
 	if err != nil {
