@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -16,6 +18,9 @@ type Config struct {
 }
 
 func Load() *Config {
+	// Load .env file if it exists (no error if missing)
+	godotenv.Load()
+
 	return &Config{
 		Port:          getEnv("PORT", "8080"),
 		DatabasePath:  getEnv("DATABASE_PATH", "./narratorai.db"),
