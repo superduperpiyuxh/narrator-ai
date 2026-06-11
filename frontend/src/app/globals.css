@@ -88,7 +88,23 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), Inter, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Font feature settings for monospace (Fira Code ligatures) */
+code, kbd, pre, .font-mono {
+  font-feature-settings: "liga" 1, "calt" 1;
+}
+
+/* Tighter tracking for headings */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 /* Custom scrollbar for dark theme */
