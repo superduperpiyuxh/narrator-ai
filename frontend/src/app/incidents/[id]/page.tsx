@@ -91,7 +91,7 @@ export default function IncidentDetailPage() {
 
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground">{incident.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{incident.title}</h1>
             <SeverityBadge severity={incident.severity} />
             <span className="text-sm font-mono text-muted-foreground">#{incident.id}</span>
           </div>
@@ -125,7 +125,7 @@ export default function IncidentDetailPage() {
 
         {incident.techniques && incident.techniques.length > 0 && (
           <section className="mb-6">
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">MITRE ATT&CK Techniques</h2>
+            <h2 className="text-base font-semibold text-foreground mb-3">MITRE ATT&CK Techniques</h2>
             <div className="flex flex-wrap gap-2">
               {incident.techniques.map((tech) => (
                 <TechniqueBadge
@@ -140,7 +140,7 @@ export default function IncidentDetailPage() {
 
         {incident.techniques && incident.techniques.length > 0 && (
           <section className="mb-6">
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">Kill Chain</h2>
+            <h2 className="text-base font-semibold text-foreground mb-3">Kill Chain</h2>
             <div className="bg-card border border-border rounded-xl p-4">
               <KillChain techniques={incident.techniques} />
             </div>

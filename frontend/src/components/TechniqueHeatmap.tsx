@@ -178,7 +178,7 @@ export function TechniqueHeatmap() {
         </div>
         <div className="flex items-center gap-3">
           {/* Legend */}
-          <div className="hidden md:flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-zinc-900 border border-border" /> 0</span>
             <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-green-900 border border-border" /> 1-2</span>
             <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-yellow-900 border border-border" /> 3-5</span>
@@ -224,7 +224,7 @@ export function TechniqueHeatmap() {
                           aria-label={`${tech.id}: ${tech.name} — ${count} incident${count !== 1 ? 's' : ''}`}
                         >
                           <div className="flex items-center justify-center h-full">
-                            <span className="text-[9px] font-mono text-muted-foreground truncate px-0.5">
+                            <span className="text-xs font-mono text-muted-foreground truncate px-0.5">
                               {tech.id}
                             </span>
                           </div>
@@ -233,9 +233,9 @@ export function TechniqueHeatmap() {
                         {isHovered && (
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 pointer-events-none">
                             <div className="bg-surface border border-border rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
-                              <div className="text-[10px] font-mono text-primary mb-0.5">{tech.id}</div>
+                              <div className="text-xs font-mono text-primary mb-0.5">{tech.id}</div>
                               <div className="text-xs text-foreground/80 font-medium">{tech.name}</div>
-                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                              <div className="text-xs text-muted-foreground mt-0.5">
                                 {count} incident{count !== 1 ? 's' : ''}
                               </div>
                             </div>

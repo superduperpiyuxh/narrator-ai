@@ -70,7 +70,7 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Settings</h1>
             <p className="text-muted-foreground mt-1">{email}</p>
           </div>
           <button
@@ -83,7 +83,7 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           <section className="bg-card rounded-lg p-6 border border-border">
-            <h2 className="text-lg font-semibold text-white mb-4">API Access</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">API Access</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Use this API key to send events to Nexus from your SIEM or other tools.
             </p>
@@ -101,7 +101,7 @@ export default function SettingsPage() {
           </section>
 
           <section className="bg-card rounded-lg p-6 border border-border">
-            <h2 className="text-lg font-semibold text-white mb-4">OpenRouter API Key</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">OpenRouter API Key</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Provide your own OpenRouter API key to generate narratives. Get a free key at{' '}
               <a
@@ -132,7 +132,7 @@ export default function SettingsPage() {
                   value={openrouterKey}
                   onChange={(e) => setOpenrouterKey(e.target.value)}
                   placeholder="sk-or-v1-..."
-                  className="w-full px-3 py-2 bg-surface border border-border rounded text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   aria-label="OpenRouter API Key"
                 />
               </div>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-2 px-4 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-medium rounded transition-colors"
+                className="w-full py-2 px-4 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-foreground font-medium rounded transition-colors"
               >
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>

@@ -69,11 +69,11 @@ export function KillChain({ techniques }: KillChainProps) {
                   }
                 `}
               >
-                <span className="text-[11px] font-medium leading-tight whitespace-nowrap">
+                <span className="text-xs font-medium leading-tight whitespace-nowrap">
                   {phase.label}
                 </span>
                 {isActive && techIds.length > 0 && (
-                  <span className="mt-1 text-[10px] font-mono text-primary/80 leading-tight">
+                  <span className="mt-1 text-xs font-mono text-primary/80 leading-tight">
                     {techIds.join(', ')}
                   </span>
                 )}

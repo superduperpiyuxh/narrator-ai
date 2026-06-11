@@ -182,7 +182,7 @@ function HomePageContent() {
       <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 flex-shrink-0 sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-primary" aria-hidden="true" />
-          <h1 className="text-lg font-bold text-foreground tracking-tight">Nexus</h1>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">Nexus</h1>
           <button
             onClick={openPalette}
             className="hidden sm:flex items-center gap-2 ml-4 px-3 py-1.5 bg-surface border border-border rounded-lg text-sm text-muted-foreground hover:bg-surface-hover transition-colors"
@@ -190,7 +190,7 @@ function HomePageContent() {
           >
             <Search className="w-3.5 h-3.5" />
             <span>Search incidents...</span>
-            <kbd className="text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border ml-4">Ctrl+K</kbd>
+            <kbd className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded border border-border ml-4">Ctrl+K</kbd>
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -472,10 +472,10 @@ function StatCard({
         </svg>
       </div>
       <div className="relative">
-        <div className={cn('text-2xl font-bold', color)}>
+        <div className={cn('text-3xl font-bold tracking-tight', color)}>
           {value.toLocaleString()}
         </div>
-        <div className="text-xs text-muted-foreground mt-1">{label}</div>
+        <div className="text-sm text-muted-foreground mt-1">{label}</div>
       </div>
     </div>
   );

@@ -146,7 +146,7 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] text-muted-foreground/60">
+            <span className="font-mono text-xs text-muted-foreground/60">
               #{event.id}
             </span>
             <button

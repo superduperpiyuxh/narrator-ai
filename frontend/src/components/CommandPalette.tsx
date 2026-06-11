@@ -144,7 +144,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             className="flex-1 bg-transparent py-4 text-foreground placeholder:text-muted-foreground outline-none text-sm"
             aria-label="Search command palette"
           />
-          <kbd className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+          <kbd className="hidden sm:inline-flex items-center gap-1 text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
             ESC
           </kbd>
         </div>
@@ -223,13 +223,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
         <div className="px-4 py-2 border-t border-border flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <kbd className="bg-muted px-1 rounded">↑↓</kbd> navigate
+            <kbd className="bg-muted px-1 rounded font-mono">↑↓</kbd> navigate
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="bg-muted px-1 rounded">↵</kbd> select
+            <kbd className="bg-muted px-1 rounded font-mono">↵</kbd> select
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="bg-muted px-1 rounded">esc</kbd> close
+            <kbd className="bg-muted px-1 rounded font-mono">esc</kbd> close
           </span>
         </div>
       </div>
