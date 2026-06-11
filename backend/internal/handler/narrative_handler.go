@@ -47,11 +47,6 @@ func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
 		return
 	}
 
-	if h.llmKey == "" {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "OPENROUTER_API_KEY not configured"})
-		return
-	}
-
 	if security.DetectInjection(inc.Title) || security.DetectInjection(inc.Description) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "potentially malicious input detected"})
 		return
@@ -68,6 +63,10 @@ func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
 	llmKey := h.llmKey
 	if user, _ := h.authSvc.GetUserByID(userID); user != nil && user.OpenRouterKey != "" {
 		llmKey = user.OpenRouterKey
+	}
+	if llmKey == "" {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "No LLM API key configured. Set your key in Settings or set OPENROUTER_API_KEY env var."})
+		return
 	}
 	llmClient := llm.NewClient(llmKey)
 	gen := narrative.NewGenerator(llmClient)

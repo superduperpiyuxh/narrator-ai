@@ -37,7 +37,7 @@ func setupMiddlewareTestService(t *testing.T) *Service {
 	return NewService(db, "test-secret-middleware")
 }
 
-func TestAuthMiddleware_DemoMode(t *testing.T) {
+func TestAuthMiddleware_NoAuth_Returns401(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	svc := &Service{}
 	mw := AuthMiddleware(svc)
@@ -52,8 +52,8 @@ func TestAuthMiddleware_DemoMode(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", w.Code)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", w.Code)
 	}
 }
 

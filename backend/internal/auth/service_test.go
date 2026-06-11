@@ -63,7 +63,7 @@ func TestAuthMiddleware_BearerToken(t *testing.T) {
 	}
 }
 
-func TestAuthMiddleware_NoAuth_DemoMode(t *testing.T) {
+func TestAuthMiddleware_NoAuth(t *testing.T) {
 	svc := setupTestService()
 	r := setupRouter(svc)
 
@@ -71,15 +71,8 @@ func TestAuthMiddleware_NoAuth_DemoMode(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200 (demo mode), got %d", w.Code)
-	}
-
-	var resp map[string]string
-	json.Unmarshal(w.Body.Bytes(), &resp)
-
-	if resp["user_id"] != "" {
-		t.Errorf("expected empty user_id in demo mode, got '%s'", resp["user_id"])
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", w.Code)
 	}
 }
 
@@ -117,7 +110,7 @@ func TestAuthMiddleware_WrongSecretToken(t *testing.T) {
 func TestAuthMiddleware_InvalidAPIKey(t *testing.T) {
 	svc := &Service{
 		jwtSecret: []byte("test-secret"),
-		db:        nil, // no database
+		db:        nil,
 	}
 	r := setupRouter(svc)
 
@@ -126,7 +119,6 @@ func TestAuthMiddleware_InvalidAPIKey(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// With no DB, GetUserByAPIKey fails → returns 401
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", w.Code)
 	}
@@ -136,14 +128,14 @@ func TestAuthMiddleware_MalformedBearer(t *testing.T) {
 	svc := setupTestService()
 	r := setupRouter(svc)
 
-	// "Bearer" with no token — should be 401 since we try to validate empty string
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer ")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
+	// "Bearer " with empty token — validation fails → 401
 	if w.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401 for empty bearer token, got %d", w.Code)
+		t.Errorf("expected 401, got %d", w.Code)
 	}
 }
 
@@ -169,8 +161,6 @@ func TestAuthMiddleware_CaseInsensitiveBearer(t *testing.T) {
 		t.Errorf("expected user_id 'user-123', got '%s'", resp["user_id"])
 	}
 }
-
-// Service tests
 
 func TestService_GenerateToken(t *testing.T) {
 	svc := setupTestService()
@@ -290,7 +280,7 @@ func TestGetUserID_Missing(t *testing.T) {
 func TestGetUserID_WrongType(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Set("user_id", 12345) // wrong type
+	c.Set("user_id", 12345)
 
 	userID := GetUserID(c)
 	if userID != "" {
