@@ -2,16 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Grid3x3, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
-import { API_BASE } from '@/lib/api';
+import { API_BASE, isAuthenticated } from '@/lib/api';
 import type { Technique, Incident } from '@/lib/types';
 import { cn } from '@/lib/utils';
-
-function getHeaders() {
-  const token = localStorage.getItem('nexus_token');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
-}
 
 const TACTIC_ORDER = [
   'initial-access',
@@ -57,13 +50,30 @@ export function TechniqueHeatmap() {
     let cancelled = false;
     const load = async () => {
       try {
-        const headers = getHeaders();
+        if (!isAuthenticated()) {
+          if (!cancelled) {
+            setTechniques([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const token = localStorage.getItem('nexus_token');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         const [techRes, incRes] = await Promise.all([
           fetch(`${API_BASE}/api/techniques`, { headers }),
           fetch(`${API_BASE}/api/incidents?limit=1000`, { headers }),
         ]);
 
-        if (!techRes.ok) throw new Error('Failed to load techniques');
+        if (!techRes.ok) {
+          if (!cancelled) {
+            setError('Failed to load techniques');
+            setLoading(false);
+          }
+          return;
+        }
 
         const techData = await techRes.json();
         const allTechs: Technique[] = techData.techniques || [];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { API_BASE, isAuthenticated, clearToken } from '@/lib/api';
 import { IncidentCard } from '@/components/IncidentCard';
@@ -20,16 +20,29 @@ function getHeaders() {
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<IncidentStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [severity, setSeverity] = useState('');
-  const [status, setStatus] = useState('');
-  const [sourceIP, setSourceIP] = useState('');
+  const [severity, setSeverity] = useState(searchParams.get('severity') || '');
+  const [status, setStatus] = useState(searchParams.get('status') || '');
+  const [sourceIP, setSourceIP] = useState(searchParams.get('source_ip') || '');
   const limit = 24;
+
+  // Sync filter state from URL search params (for browser back/forward)
+  useEffect(() => {
+    const sev = searchParams.get('severity') || '';
+    const st = searchParams.get('status') || '';
+    const ip = searchParams.get('source_ip') || '';
+    const p = parseInt(searchParams.get('page') || '1', 10);
+    setSeverity(sev);
+    setStatus(st);
+    setSourceIP(ip);
+    setPage(isNaN(p) ? 1 : p);
+  }, [searchParams]);
 
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [showShortcuts, setShowShortcuts] = useState(false);

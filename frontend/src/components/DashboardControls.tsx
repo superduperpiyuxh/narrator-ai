@@ -124,33 +124,33 @@ export const DashboardControls = forwardRef<DashboardControlsHandle, DashboardCo
           {currentSeverity && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300">
               Severity: {currentSeverity}
-              <a
-                href={buildURL({ severity: '', page: '1' })}
+              <button
+                onClick={() => router.push(buildURL({ severity: '', page: '1' }))}
                 className="text-zinc-500 hover:text-zinc-300"
                 aria-label={`Remove severity filter: ${currentSeverity}`}
               >
                 <X className="w-3 h-3" />
-              </a>
+              </button>
             </span>
           )}
           {currentSourceIP && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300">
               IP: {currentSourceIP}
-              <a
-                href={buildURL({ source_ip: '', page: '1' })}
+              <button
+                onClick={() => router.push(buildURL({ source_ip: '', page: '1' }))}
                 className="text-zinc-500 hover:text-zinc-300"
                 aria-label={`Remove IP filter: ${currentSourceIP}`}
               >
                 <X className="w-3 h-3" />
-              </a>
+              </button>
             </span>
           )}
-          <a
-            href="/"
+          <button
+            onClick={() => router.push('/')}
             className="text-xs text-zinc-500 hover:text-zinc-300 underline"
           >
             Clear all
-          </a>
+          </button>
         </div>
       )}
     </div>
