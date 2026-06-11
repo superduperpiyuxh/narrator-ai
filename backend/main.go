@@ -57,6 +57,9 @@ func main() {
 	r.POST("/api/auth/signup", authH.Signup)
 	r.POST("/api/auth/login", authH.Login)
 
+	// Rate limiter: 5 narrative generations per minute per user
+	narrativeRateLimiter := auth.NewRateLimiter(5, time.Minute)
+
 	// Protected routes
 	protected := r.Group("")
 	protected.Use(auth.AuthMiddleware(authSvc))
@@ -78,8 +81,9 @@ func main() {
 		protected.GET("/api/incidents/:id", ih.GetIncident)
 		protected.GET("/api/incidents/:id/events", ih.GetIncidentEvents)
 		protected.GET("/api/techniques", ih.GetTechniques)
+		protected.GET("/api/techniques/counts", ih.GetTechniqueCounts)
 
-		protected.POST("/api/incidents/:id/narrative", nh.GenerateNarrative)
+		protected.POST("/api/incidents/:id/narrative", auth.RateLimitMiddleware(narrativeRateLimiter), nh.GenerateNarrative)
 		protected.GET("/api/incidents/:id/narrative", nh.GetNarrative)
 		protected.GET("/api/narratives/:id", nh.GetNarrativeSourceEvents)
 
@@ -94,7 +98,7 @@ func main() {
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		WriteTimeout: 130 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 

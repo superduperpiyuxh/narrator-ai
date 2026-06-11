@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Zap, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_BASE } from '@/lib/api';
 
 interface GenerateNarrativeButtonProps {
   incidentId: number;
+  onGenerated?: () => void;
 }
 
-export function GenerateNarrativeButton({ incidentId }: GenerateNarrativeButtonProps) {
+export function GenerateNarrativeButton({ incidentId, onGenerated }: GenerateNarrativeButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const router = useRouter();
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -20,7 +20,7 @@ export function GenerateNarrativeButton({ incidentId }: GenerateNarrativeButtonP
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`http://localhost:8080/api/incidents/${incidentId}/narrative`, {
+      const res = await fetch(`${API_BASE}/api/incidents/${incidentId}/narrative`, {
         method: 'POST',
         headers,
       });
@@ -31,7 +31,7 @@ export function GenerateNarrativeButton({ incidentId }: GenerateNarrativeButtonP
       }
 
       toast.success('Narrative generated!');
-      router.refresh();
+      onGenerated?.();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to generate narrative';
       toast.error(msg);

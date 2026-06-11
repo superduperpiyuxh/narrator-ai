@@ -52,10 +52,18 @@ func (h *NarrativeHandler) GenerateNarrative(c *gin.Context) {
 		return
 	}
 
+	inc.Title = security.SanitizeInput(inc.Title, 1000)
+	inc.Description = security.SanitizeInput(inc.Description, 5000)
+
 	events, err := h.db.GetIncidentEvents(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Limit events to prevent prompt stuffing
+	if len(events) > 500 {
+		events = events[:500]
 	}
 
 	// Use user's OpenRouter key if available, fall back to global

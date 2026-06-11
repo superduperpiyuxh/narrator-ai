@@ -170,3 +170,12 @@ func (h *IncidentHandler) GetTechniques(c *gin.Context) {
 	techniques := attck.AllTechniques()
 	c.JSON(http.StatusOK, gin.H{"techniques": techniques})
 }
+
+func (h *IncidentHandler) GetTechniqueCounts(c *gin.Context) {
+	counts, err := h.db.GetTechniqueCounts()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"counts": counts})
+}

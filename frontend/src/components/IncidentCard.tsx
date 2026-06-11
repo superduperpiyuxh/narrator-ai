@@ -25,12 +25,11 @@ export function IncidentCard({ incident, selected = false }: IncidentCardProps) 
           : 'border-zinc-800 hover:border-zinc-600'
       )}
       aria-label={`Incident ${incident.id}: ${incident.title}, severity ${incident.severity}, ${incident.event_count} events`}
-      aria-selected={selected}
     >
       {/* Top row */}
       <div className="flex items-center justify-between mb-3">
         <SeverityBadge severity={incident.severity} />
-        <span className="text-xs font-mono text-zinc-500">#{incident.id}</span>
+        <span className="text-xs font-mono text-zinc-400">#{incident.id}</span>
       </div>
 
       {/* Title */}
@@ -60,7 +59,7 @@ export function IncidentCard({ incident, selected = false }: IncidentCardProps) 
       </div>
 
       {/* Bottom row */}
-      <div className="flex items-center justify-between text-xs text-zinc-500">
+      <div className="flex items-center justify-between text-xs text-zinc-400">
         <time dateTime={incident.start_time}>
           {formatTimestamp(incident.start_time)}
         </time>

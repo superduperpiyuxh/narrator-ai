@@ -442,3 +442,25 @@ func (db *DB) SeedTechniques(techniques []TechniqueRef) error {
 	}
 	return nil
 }
+
+func (db *DB) GetTechniqueCounts() (map[string]int, error) {
+	rows, err := db.conn.Query(`
+		SELECT technique_id, COUNT(*) as cnt
+		FROM incident_techniques
+		GROUP BY technique_id`)
+	if err != nil {
+		return nil, fmt.Errorf("query technique counts: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var techID string
+		var cnt int
+		if err := rows.Scan(&techID, &cnt); err != nil {
+			return nil, fmt.Errorf("scan technique count: %w", err)
+		}
+		counts[techID] = cnt
+	}
+	return counts, nil
+}

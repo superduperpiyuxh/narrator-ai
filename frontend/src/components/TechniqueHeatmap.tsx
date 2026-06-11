@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Grid3x3, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { API_BASE, isAuthenticated } from '@/lib/api';
-import type { Technique, Incident } from '@/lib/types';
+import type { Technique } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const TACTIC_ORDER = [
@@ -62,12 +62,12 @@ export function TechniqueHeatmap() {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const [techRes, incRes] = await Promise.all([
+        const [techRes, countsRes] = await Promise.all([
           fetch(`${API_BASE}/api/techniques`, { headers }),
-          fetch(`${API_BASE}/api/incidents?limit=1000`, { headers }),
+          fetch(`${API_BASE}/api/techniques/counts`, { headers }),
         ]);
 
-        if (techRes.status === 401 || incRes.status === 401) {
+        if (techRes.status === 401 || countsRes.status === 401) {
           localStorage.removeItem('nexus_token');
           window.location.href = '/login';
           return;
@@ -85,16 +85,11 @@ export function TechniqueHeatmap() {
         const allTechs: Technique[] = techData.techniques || [];
 
         let techniqueCounts = new Map<string, number>();
-        if (incRes.ok) {
-          const incData = await incRes.json();
-          const incidents: Incident[] = incData.incidents || [];
-          for (const inc of incidents) {
-            for (const t of inc.techniques || []) {
-              techniqueCounts.set(
-                t.technique_id,
-                (techniqueCounts.get(t.technique_id) || 0) + 1
-              );
-            }
+        if (countsRes.ok) {
+          const countsData = await countsRes.json();
+          const rawCounts: Record<string, number> = countsData.counts || {};
+          for (const [id, count] of Object.entries(rawCounts)) {
+            techniqueCounts.set(id, count);
           }
         }
 

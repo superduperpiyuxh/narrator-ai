@@ -283,7 +283,11 @@ export default function HomePage() {
         />
 
         {incidents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Incidents">
+          <>
+            <div aria-live="polite" className="sr-only">
+              {total} incidents loaded, page {page} of {totalPages}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Incidents">
             {incidents.map((incident, index) => (
               <IncidentCard
                 key={incident.id}
@@ -292,6 +296,7 @@ export default function HomePage() {
               />
             ))}
           </div>
+          </>
         ) : (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
             <Shield className="w-12 h-12 text-zinc-600 mx-auto mb-4" aria-hidden="true" />

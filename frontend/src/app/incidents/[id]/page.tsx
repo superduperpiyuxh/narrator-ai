@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { StoryCard } from '@/components/StoryCard';
@@ -32,6 +32,26 @@ export default function IncidentDetailPage() {
   const [activeView, setActiveView] = useState<'narrative' | 'timeline'>('narrative');
   const [timelineOpen, setTimelineOpen] = useState(false);
 
+  const fetchNarrative = useCallback(async () => {
+    const headers = getHeaders();
+    try {
+      const narRes = await fetch(`${API_BASE}/api/incidents/${incidentId}/narrative`, { headers });
+      if (narRes.ok) {
+        const narData = await narRes.json();
+        if (narData.narrative) {
+          setNarrative(narData.narrative);
+          const fbRes = await fetch(`${API_BASE}/api/feedback/${narData.narrative.id}`, { headers });
+          if (fbRes.ok) {
+            const fbData = await fbRes.json();
+            setFeedback(fbData.feedback);
+          }
+        }
+      }
+    } catch {
+      // silent - narrative may not exist yet
+    }
+  }, [incidentId]);
+
   useEffect(() => {
     const load = async () => {
       const headers = getHeaders();
@@ -41,18 +61,7 @@ export default function IncidentDetailPage() {
         const incData = await incRes.json();
         setIncident(incData.incident);
 
-        const narRes = await fetch(`${API_BASE}/api/incidents/${incidentId}/narrative`, { headers });
-        if (narRes.ok) {
-          const narData = await narRes.json();
-          if (narData.narrative) {
-            setNarrative(narData.narrative);
-            const fbRes = await fetch(`${API_BASE}/api/feedback/${narData.narrative.id}`, { headers });
-            if (fbRes.ok) {
-              const fbData = await fbRes.json();
-              setFeedback(fbData.feedback);
-            }
-          }
-        }
+        await fetchNarrative();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
       } finally {
@@ -60,7 +69,7 @@ export default function IncidentDetailPage() {
       }
     };
     load();
-  }, [incidentId]);
+  }, [incidentId, fetchNarrative]);
 
   if (loading) {
     return (
@@ -200,7 +209,7 @@ export default function IncidentDetailPage() {
                 <p className="text-zinc-500 mb-6">
                   Generate an AI narrative for this incident to see the attack story.
                 </p>
-                <GenerateNarrativeButton incidentId={incidentId} />
+                <GenerateNarrativeButton incidentId={incidentId} onGenerated={fetchNarrative} />
               </div>
             )}
           </div>
